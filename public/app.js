@@ -141,6 +141,8 @@ function renderAccountPanel(settings) {
   const issuedPassword = issued.password || "";
   const issuedSecret = issued.twofaSecret || "";
   const issuedType = state.currentAccount?.issuedType || "mail";
+  const displayedUsername = issuedUsername || issuedEmail;
+  const displayedPassword = issuedType === "mail" ? issuedPassword : (settings.defaultPasswordEnabled ? settings.defaultPassword : issuedPassword);
   const emptyState = `
     <p class="muted">Chọn loại tài khoản bạn muốn lấy:</p>
     <div class="button-row primary-actions">
@@ -152,20 +154,8 @@ function renderAccountPanel(settings) {
   `;
   const issuedState = `
     <form id="save-2fa-client-form" class="issued-card">
-      <div class="form-group">
-        <label>E-Mail:</label>
-        <div class="copy-field">
-          <input name="email" value="${escapeAttr(issuedEmail)}" placeholder="Email..." />
-          <button type="button" class="copy-icon-btn" data-copy="${escapeAttr(issuedEmail)}" aria-label="Copy email">Copy</button>
-        </div>
-      </div>
-      <div class="form-group">
-        <label>Password:</label>
-        <div class="copy-field">
-          <input name="mail_password" value="${escapeAttr(issuedPassword)}" placeholder="Password..." />
-          <button type="button" class="copy-icon-btn" data-copy="${escapeAttr(issuedPassword)}" aria-label="Copy password">Copy</button>
-        </div>
-      </div>
+      <input type="hidden" name="email" value="${escapeAttr(issuedEmail || displayedUsername)}" />
+      <input type="hidden" name="mail_password" value="${escapeAttr(issuedPassword)}" />
       <div class="issued-actions two-col">
         <button type="button" class="btn-green" data-action="get-mail-code"># Get Code</button>
         <button type="button" class="btn-teal" data-action="open-mailbox">Đọc Hòm Thư</button>
@@ -174,15 +164,15 @@ function renderAccountPanel(settings) {
       <div class="form-group">
         <label>User TikTok:</label>
         <div class="copy-field">
-          <input name="username" value="${escapeAttr(issuedUsername)}" placeholder="Nhập User TikTok mới tạo" />
-          <button type="button" class="copy-icon-btn" data-copy="${escapeAttr(issuedUsername)}" aria-label="Copy user TikTok">Copy</button>
+          <input name="username" value="${escapeAttr(displayedUsername)}" placeholder="Nhập User TikTok mới tạo" />
+          <button type="button" class="copy-icon-btn" data-copy="${escapeAttr(displayedUsername)}" aria-label="Copy user TikTok">Copy</button>
         </div>
       </div>
       <div class="form-group">
         <label>Password:</label>
         <div class="copy-field">
-          <input name="password" value="${escapeAttr(settings.defaultPasswordEnabled ? settings.defaultPassword : issuedPassword)}" placeholder="Password..." />
-          <button type="button" class="copy-icon-btn" data-copy="${escapeAttr(settings.defaultPasswordEnabled ? settings.defaultPassword : issuedPassword)}" aria-label="Copy password">Copy</button>
+          <input name="password" value="${escapeAttr(displayedPassword)}" placeholder="Password..." />
+          <button type="button" class="copy-icon-btn" data-copy="${escapeAttr(displayedPassword)}" aria-label="Copy password">Copy</button>
         </div>
       </div>
       <div class="form-group">
