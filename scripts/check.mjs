@@ -5,8 +5,7 @@ const requiredFiles = [
   "public/styles.css",
   "public/app.js",
   "functions/api/[[path]].ts",
-  "migrations/0001_init.sql",
-  "wrangler.toml"
+  "migrations/0001_init.sql"
 ];
 
 for (const file of requiredFiles) {

@@ -39,7 +39,7 @@ Vào Settings để đổi mật khẩu ngay sau khi deploy.
 6. Build output directory: `dist`.
 7. Deploy command: để trống.
 8. Tạo D1 database tên `ahhd_db`.
-9. Trong Pages project, vào Settings -> Functions -> D1 database bindings.
+9. Trong Pages project, vào Settings -> Bindings -> Add -> D1 database.
 10. Thêm binding:
     - Variable name: `DB`
     - D1 database: `ahhd_db`
