@@ -440,38 +440,193 @@ textarea {
   background: var(--primary);
 }
 
-.settings-layout {
+.settings-page {
+  width: min(920px, 100%);
+  margin: 0 auto;
+}
+
+.settings-stack {
   display: grid;
-  grid-template-columns: 220px 1fr;
+  gap: 24px;
+}
+
+.settings-card {
+  overflow: hidden;
+  border: 1px solid #d9e1eb;
+  border-radius: 6px;
+  background: #ffffff;
+  box-shadow: var(--shadow-soft);
+}
+
+.settings-card-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 52px;
+  border-bottom: 1px solid #d9e1eb;
+  padding: 0 18px;
+  background: #f4f8fc;
+  color: var(--primary);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.settings-icon {
+  display: inline-flex;
+  width: 18px;
+  height: 18px;
+  flex: 0 0 18px;
+  align-items: center;
+  justify-content: center;
+  color: var(--primary);
+}
+
+.settings-icon svg {
+  width: 18px;
+  height: 18px;
+  fill: currentColor;
+}
+
+.settings-card-body {
+  padding: 22px;
+}
+
+.settings-card-body form {
+  display: grid;
   gap: 14px;
 }
 
-.settings-menu {
-  display: grid;
-  gap: 8px;
-  align-content: start;
+.settings-card-body .btn-save {
+  width: 100%;
+  min-height: 42px;
 }
 
-.settings-menu button.active {
+.settings-card-body h4 {
+  margin: 2px 0 0;
+  font-size: 14px;
+}
+
+.quick-settings-card {
+  margin-bottom: 24px;
+}
+
+.settings-quick-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  margin: 0;
+  padding: 22px;
+}
+
+.settings-quick-grid button {
+  display: grid;
+  min-height: 96px;
+  align-content: center;
+  justify-items: center;
+  gap: 8px;
+  border-color: #d9e1eb;
+  background: #ffffff;
+  color: var(--primary-dark);
+  font-size: 13px;
+  font-weight: 700;
+  box-shadow: none;
+}
+
+.settings-quick-grid button .settings-icon,
+.settings-quick-grid button .settings-icon svg {
+  width: 26px;
+  height: 26px;
+  flex-basis: 26px;
+}
+
+.settings-quick-grid button:hover,
+.settings-quick-grid button.active {
   border-color: var(--primary);
   background: #eff6ff;
-  color: var(--primary-dark);
+  color: var(--primary);
+}
+
+.settings-back-link {
+  display: block;
+  margin: 28px auto 6px;
+  color: var(--primary);
+  font-size: 13px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.radio-stack {
+  display: grid;
+  gap: 6px;
+  justify-items: start;
+}
+
+.radio-stack .check-row {
+  justify-content: flex-start;
+  border: 0;
+  padding: 0;
+}
+
+.radio-stack .check-row input {
+  order: 0;
 }
 
 .check-list {
   display: grid;
-  gap: 8px;
+  gap: 0;
+  border-top: 1px solid var(--line);
 }
 
 .check-row {
   display: flex;
   align-items: center;
-  gap: 8px;
+  justify-content: space-between;
+  gap: 12px;
+  border-bottom: 1px solid var(--line);
+  padding: 11px 0;
+  color: #334155;
+  font-size: 13px;
 }
 
 .check-row input {
   width: auto;
   min-height: auto;
+  order: 2;
+  accent-color: var(--primary);
+}
+
+.check-row input[type="checkbox"] {
+  position: relative;
+  width: 38px;
+  height: 20px;
+  flex: 0 0 38px;
+  border: 0;
+  border-radius: 999px;
+  appearance: none;
+  background: #c7cbd1;
+  cursor: pointer;
+  transition: background 0.18s ease;
+}
+
+.check-row input[type="checkbox"]::after {
+  content: "";
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: 0 1px 3px rgb(15 23 42 / 0.22);
+  transition: transform 0.18s ease;
+}
+
+.check-row input[type="checkbox"]:checked {
+  background: var(--primary);
+}
+
+.check-row input[type="checkbox"]:checked::after {
+  transform: translateX(18px);
 }
 
 .table-wrap {
@@ -626,10 +781,6 @@ th {
   align-items: center;
 }
 
-.settings-layout .panel {
-  box-shadow: var(--shadow-soft);
-}
-
 .quick-actions {
   margin-bottom: 14px;
 }
@@ -665,7 +816,6 @@ th {
   .stats,
   .primary-actions,
   .form-grid,
-  .settings-layout,
   .video-grid {
     grid-template-columns: 1fr;
   }
@@ -804,6 +954,36 @@ th {
 
   .primary-actions {
     gap: 7px;
+  }
+
+  .settings-page {
+    width: 100%;
+  }
+
+  .settings-stack {
+    gap: 14px;
+  }
+
+  .settings-card-title {
+    min-height: 46px;
+    padding: 0 12px;
+    font-size: 13px;
+  }
+
+  .settings-card-body {
+    padding: 14px 12px;
+  }
+
+  .settings-quick-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    padding: 12px;
+  }
+
+  .settings-quick-grid button {
+    min-height: 74px;
+    padding: 8px;
+    font-size: 12px;
   }
 
   .primary-actions button,

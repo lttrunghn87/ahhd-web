@@ -307,44 +307,64 @@ function renderSettings() {
     loadSettingsData().then(render).catch((error) => showToast(error.message, true));
     return;
   }
+  const content = state.selectedManagerPanel || state.selectedSettingsPanel !== "general"
+    ? renderSelectedSettingsPanel()
+    : `${renderGeneralSettings()}${renderDisplaySettings()}`;
   app.innerHTML = `
-    <div class="page-head">
-      <div>
-        <p class="page-eyebrow">Quản trị hệ thống</p>
-        <h1>Settings</h1>
-      </div>
-      <div class="head-meta">
-        <span>Video</span>
-        <span>Tài khoản</span>
-        <span>Nhân viên</span>
-      </div>
-    </div>
-    <div class="quick-actions">
-      <button data-manager-panel="employees">Quản lý NV</button>
-      <button data-manager-panel="links">Quản lý Link</button>
-      <button data-manager-panel="twofa">Quản lý 2FA</button>
-      <button data-settings-panel="videos">Thêm Video</button>
-      <button data-settings-panel="accounts">Thêm TK Thường</button>
-      <button data-settings-panel="twofaAccounts">Thêm TK 2FA</button>
-    </div>
-    <div style="height: 14px"></div>
-    <div class="settings-layout">
-      <aside class="settings-menu">
-        ${settingsMenuButton("general", "Cài đặt chung")}
-        ${settingsMenuButton("videos", "Link Video")}
-        ${settingsMenuButton("accounts", "TK Thường")}
-        ${settingsMenuButton("twofaAccounts", "TK 2FA")}
-        ${settingsMenuButton("display", "Hiển thị")}
-      </aside>
-      <section class="panel">
-        <div class="panel-body">${renderSelectedSettingsPanel()}</div>
+    <div class="settings-page">
+      <section class="settings-card quick-settings-card">
+        <div class="settings-card-title">${settingsIcon("bolt")}<span>Thao tác nhanh</span></div>
+        <div class="quick-actions settings-quick-grid">
+          ${quickActionButton("employees", "manager", "users", "Quản lý NV")}
+          ${quickActionButton("links", "manager", "list", "Quản lý Link")}
+          ${quickActionButton("twofa", "manager", "shield", "Quản lý 2FA")}
+          ${quickActionButton("videos", "settings", "video", "Thêm Video")}
+          ${quickActionButton("accounts", "settings", "user-plus", "Thêm TK Thường")}
+          ${quickActionButton("twofaAccounts", "settings", "shield", "Thêm TK 2FA")}
+        </div>
       </section>
+      <div class="settings-stack">${content}</div>
+      <a href="/home" class="settings-back-link" data-route="home">← Quay lại Trang chủ</a>
     </div>
   `;
 }
 
 function settingsMenuButton(id, label) {
   return `<button data-settings-panel="${id}" class="${state.selectedSettingsPanel === id ? "active" : ""}">${label}</button>`;
+}
+
+function quickActionButton(id, kind, icon, label) {
+  const attr = kind === "manager" ? `data-manager-panel="${id}"` : `data-settings-panel="${id}"`;
+  const active = kind === "manager"
+    ? state.selectedManagerPanel === id
+    : !state.selectedManagerPanel && state.selectedSettingsPanel === id;
+  return `<button ${attr} class="${active ? "active" : ""}">${settingsIcon(icon)}<span>${label}</span></button>`;
+}
+
+function settingsCard(title, icon, body, className = "") {
+  return `
+    <section class="settings-card ${className}">
+      <div class="settings-card-title">${settingsIcon(icon)}<span>${title}</span></div>
+      <div class="settings-card-body">${body}</div>
+    </section>
+  `;
+}
+
+function settingsIcon(name) {
+  const icons = {
+    bolt: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13 2 4 14h7l-1 8 10-13h-7l0-7Z"/></svg>`,
+    users: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm6-1a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM3 21a6 6 0 0 1 12 0H3Zm11.5 0c-.2-2.1-1-3.9-2.3-5.2A5 5 0 0 1 21 21h-6.5Z"/></svg>`,
+    list: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h3v3H4V6Zm5 1h11v2H9V7ZM4 11h3v3H4v-3Zm5 1h11v2H9v-2ZM4 16h3v3H4v-3Zm5 1h11v2H9v-2Z"/></svg>`,
+    shield: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 4 5v6c0 5 3.4 9.7 8 11 4.6-1.3 8-6 8-11V5l-8-3Zm0 4 5 1.9V11c0 3.5-2 6.6-5 7.8A8.6 8.6 0 0 1 7 11V7.9L12 6Z"/></svg>`,
+    video: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h11a2 2 0 0 1 2 2v1.5L21 7v10l-4-2.5V16a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2Z"/></svg>`,
+    "user-plus": `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10Zm0 2a7 7 0 0 0-7 7h10.5A6.5 6.5 0 0 1 15 16a7 7 0 0 0-6-2Zm10 1v3h3v2h-3v3h-2v-3h-3v-2h3v-3h2Z"/></svg>`,
+    api: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 7 3 12l5 5 1.4-1.4L5.8 12l3.6-3.6L8 7Zm8 0-1.4 1.4 3.6 3.6-3.6 3.6L16 17l5-5-5-5Zm-4.1 12 2.2-14h-2L9.9 19h2Z"/></svg>`,
+    apple: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16.4 13c0-2 1.4-3 1.5-3.1-1-1.4-2.4-1.6-2.9-1.6-1.2-.1-2.4.7-3 0-.6-.7-1.6-.7-2.5-.7-1.3 0-2.6.8-3.3 2-1.4 2.4-.4 6 1 8 .7 1 1.5 2.2 2.6 2.1 1 0 1.4-.7 2.7-.7 1.2 0 1.6.7 2.7.7s1.8-1 2.5-2c.8-1.2 1.1-2.3 1.1-2.4 0 0-2.4-.9-2.4-2.3ZM14.2 7c.5-.7 1-1.6.8-2.5-.8 0-1.8.5-2.4 1.2-.5.6-1 1.6-.8 2.5.9.1 1.8-.5 2.4-1.2Z"/></svg>`,
+    mail: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5h18v14H3V5Zm2 3.2V17h14V8.2l-7 5.1-7-5.1Zm1.5-1.2 5.5 4 5.5-4h-11Z"/></svg>`,
+    key: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 14a5 5 0 1 1 4.6-7H22v4h-3v3h-4v-2.1A5 5 0 0 1 8 14Zm0-3a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z"/></svg>`,
+    display: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 4h18v13H3V4Zm2 2v9h14V6H5Zm4 13h6v2H9v-2Z"/></svg>`
+  };
+  return `<span class="settings-icon">${icons[name] || icons.bolt}</span>`;
 }
 
 function renderSelectedSettingsPanel() {
@@ -359,102 +379,103 @@ function renderSelectedSettingsPanel() {
 function renderGeneralSettings() {
   const s = state.settingsData.settings;
   return `
-    <form id="save-mail-api-form" class="panel-section">
-      <h3>Cài đặt Phương thức API (Get Code)</h3>
-      <div class="button-row">
-        ${radio("mail_api_method", "oauth2", "OAuth2", s.mail_api_method)}
-        ${radio("mail_api_method", "graph_api", "Graph API", s.mail_api_method)}
-        ${radio("mail_api_method", "unlimitmail", "UnlimitMail", s.mail_api_method)}
-      </div>
-      <div class="form-group"><label>API Token</label><input name="mail_api_token" value="${escapeAttr(s.mail_api_token || "")}" /></div>
-      <button class="btn-save" type="submit">Lưu Cài đặt API</button>
-    </form>
-    <hr />
-    <form id="save-icloud-form" class="form-grid">
-      <h3 class="form-group full">Cài đặt iCloud</h3>
-      <div class="form-group"><label>Tài Khoản iCloud</label><input name="icloud_account" value="${escapeAttr(s.icloud_account || "")}" /></div>
-      <div class="form-group"><label>Mật khẩu iCloud</label><input name="icloud_password" value="${escapeAttr(s.icloud_password || "")}" /></div>
-      <div class="form-group full"><button class="btn-save" type="submit">Lưu thông tin iCloud</button></div>
-    </form>
-    <hr />
-    <form id="save-withdrawal-email-form">
-      <h3>Cài đặt Email Rút Tiền Nhanh</h3>
-      <p class="muted">Email sẽ được tạo ngẫu nhiên theo dạng: [7-10 ký tự]@[Tên miền]</p>
-      <div class="form-group"><label>Tên miền</label><input name="withdrawal_domain" value="${escapeAttr(s.withdrawal_domain || "")}" /></div>
-      <button class="btn-save" type="submit">Lưu Cài đặt Email</button>
-    </form>
-    <hr />
-    <form id="save-default-password-form">
-      <h3>Cài đặt Mật khẩu Mặc định</h3>
-      ${checkbox("default_password_enabled", "Bật mật khẩu mặc định", s.default_password_enabled)}
-      <div class="form-group"><label>Mật khẩu mặc định</label><input name="default_password" value="${escapeAttr(s.default_password || "")}" /></div>
-      <button class="btn-save" type="submit">Lưu Mật khẩu Mặc định</button>
-    </form>
-    <hr />
-    <form id="save-site-password-form">
-      <h3>Bảo vệ bằng mật khẩu</h3>
-      ${checkbox("site_password_enabled", "Bật bảo vệ bằng mật khẩu", s.site_password_enabled)}
-      <div class="form-group"><label>Mật khẩu mới</label><input type="password" name="site_password" placeholder="Để trống nếu không đổi" /></div>
-      <button class="btn-save" type="submit">Lưu cài đặt bảo vệ</button>
-    </form>
-    <hr />
-    <form id="change-settings-password-form" class="form-grid">
-      <h3 class="form-group full">Đổi mật khẩu trang Cài đặt</h3>
-      <div class="form-group"><label>Mật khẩu cũ</label><input type="password" name="current_password" /></div>
-      <div class="form-group"><label>Mật khẩu mới</label><input type="password" name="new_password" /></div>
-      <div class="form-group full"><button class="btn-save" type="submit">Lưu Thay Đổi</button></div>
-    </form>
-    <hr />
-    <form id="save-management-password-form" class="form-grid">
-      <h3 class="form-group full">Mật khẩu Quản lý (Link, 2FA, NV)</h3>
-      <div class="form-group"><label>Mật khẩu cũ</label><input type="password" name="current_password" /></div>
-      <div class="form-group"><label>Mật khẩu mới</label><input type="password" name="new_password" /></div>
-      <div class="form-group full"><button class="btn-save" type="submit">Lưu Mật khẩu</button></div>
-    </form>
+    ${settingsCard("Cài đặt Phương thức API (Get Code)", "api", `
+      <form id="save-mail-api-form">
+        <div class="radio-stack">
+          ${radio("mail_api_method", "oauth2", "OAuth2", s.mail_api_method)}
+          ${radio("mail_api_method", "graph_api", "Graph API", s.mail_api_method)}
+          ${radio("mail_api_method", "unlimitmail", "UnlimitMail", s.mail_api_method)}
+        </div>
+        <div class="form-group"><label>API Token (UnlimitMail):</label><input name="mail_api_token" value="${escapeAttr(s.mail_api_token || "")}" /></div>
+        <button class="btn-save" type="submit">Lưu Cài đặt API</button>
+      </form>
+    `)}
+    ${settingsCard("Cài đặt iCloud", "apple", `
+      <form id="save-icloud-form">
+        <div class="form-group"><label>Tài Khoản iCloud</label><input name="icloud_account" value="${escapeAttr(s.icloud_account || "")}" /></div>
+        <div class="form-group"><label>Mật khẩu iCloud</label><input name="icloud_password" value="${escapeAttr(s.icloud_password || "")}" /></div>
+        <button class="btn-save" type="submit">Lưu thông tin iCloud</button>
+      </form>
+    `)}
+    ${settingsCard("Cài đặt Email Rút Tiền Nhanh", "mail", `
+      <form id="save-withdrawal-email-form">
+        <p class="muted">Email sẽ được tạo ngẫu nhiên theo dạng: [7-10 ký tự]@[Tên miền]</p>
+        <div class="form-group"><label>Tên miền (ví dụ: mail.com):</label><input name="withdrawal_domain" value="${escapeAttr(s.withdrawal_domain || "")}" /></div>
+        <button class="btn-save" type="submit">Lưu Cài đặt Email</button>
+      </form>
+    `)}
+    ${settingsCard("Cài đặt Mật khẩu Mặc định", "key", `
+      <form id="save-default-password-form">
+        ${checkbox("default_password_enabled", "Bật mật khẩu mặc định", s.default_password_enabled)}
+        <div class="form-group"><label>Mật khẩu mặc định:</label><input name="default_password" value="${escapeAttr(s.default_password || "")}" /></div>
+        <button class="btn-save" type="submit">Lưu Mật khẩu Mặc định</button>
+      </form>
+    `)}
+    ${settingsCard("Bảo vệ bằng mật khẩu", "shield", `
+      <form id="save-site-password-form">
+        ${checkbox("site_password_enabled", "Bật bảo vệ bằng mật khẩu", s.site_password_enabled)}
+        <div class="form-group"><label>Mật khẩu mới (để trống nếu không đổi):</label><input type="password" name="site_password" placeholder="Nhập mật khẩu mới" /></div>
+        <button class="btn-save" type="submit">Lưu cài đặt bảo vệ</button>
+      </form>
+    `)}
+    ${settingsCard("Đổi mật khẩu trang Cài đặt", "key", `
+      <form id="change-settings-password-form">
+        <p class="muted">Mật khẩu mặc định ban đầu là: Zxcv123</p>
+        <div class="form-group"><label>Mật khẩu cũ:</label><input type="password" name="current_password" /></div>
+        <div class="form-group"><label>Mật khẩu mới (ít nhất 6 ký tự):</label><input type="password" name="new_password" /></div>
+        <button class="btn-save" type="submit">Lưu Thay Đổi</button>
+      </form>
+    `)}
+    ${settingsCard("Mật khẩu Quản lý (Link, 2FA, NV)", "list", `
+      <form id="save-management-password-form">
+        <p class="muted">Đặt mật khẩu chung để truy cập các mục trong khu vực quản lý.</p>
+        <div class="form-group"><label>Mật khẩu cũ:</label><input type="password" name="current_password" placeholder="Nhập mật khẩu hiện tại..." /></div>
+        <div class="form-group"><label>Mật khẩu mới (ít nhất 4 ký tự):</label><input type="password" name="new_password" placeholder="Nhập mật khẩu mới..." /></div>
+        <button class="btn-save" type="submit">Lưu Mật khẩu</button>
+      </form>
+    `)}
   `;
 }
 
 function renderVideoSettings() {
   const s = state.settingsData.settings;
-  return `
+  return settingsCard("Quản lý Link Video TikTok", "video", `
     <form id="save-video-links-form">
-      <h3>Quản lý Link Video TikTok</h3>
       <p class="muted">Nhập danh sách link video TikTok, mỗi link trên một dòng.</p>
       <div class="form-group"><label>Link TikTok thường (60 phút)</label><textarea name="video_normal_60">${escapeHtml(s.video_normal_60 || "")}</textarea></div>
       <div class="form-group"><label>Link TikTok Lite (60 phút)</label><textarea name="video_lite_60">${escapeHtml(s.video_lite_60 || "")}</textarea></div>
       <div class="form-group"><label>Link TikTok Lite (180 phút)</label><textarea name="video_lite_180">${escapeHtml(s.video_lite_180 || "")}</textarea></div>
       <button class="btn-save" type="submit">Lưu Danh sách Link Video</button>
     </form>
-  `;
+  `);
 }
 
 function renderAccountSettings(formId, key, title, fieldName) {
   if (!formId) {
-    return `
+    return settingsCard("Quản lý DS Tài Khoản Thường / Mail ĐK", "user-plus", `
       <form id="save-accounts-form">
-        <h3>Quản lý DS Tài Khoản Thường / Mail ĐK</h3>
         <p class="muted">Mỗi tài khoản một dòng. Mail ĐK dùng cho nút Lấy Mail Đăng ký, TK Thường dùng cho nút Lấy Tài khoản Thường.</p>
         <div class="form-group"><label>Danh sách Mail ĐK</label><textarea name="accounts_mail">${escapeHtml(state.settingsData.mailAccounts || "")}</textarea></div>
         <div class="form-group"><label>Danh sách TK Thường</label><textarea name="accounts_normal">${escapeHtml(state.settingsData.normalAccounts || "")}</textarea></div>
         <button class="btn-save" type="submit">Lưu Danh Sách</button>
       </form>
-    `;
+    `);
   }
-  return `
+  return settingsCard(title, "shield", `
     <form id="${formId}">
-      <h3>${title}</h3>
       <p class="muted">Mỗi tài khoản một dòng. Hỗ trợ định dạng user|pass, email|pass, hoặc Email|User2FA|Password|2FA_SecretKey|Timestamp.</p>
       <div class="form-group"><textarea name="${fieldName}">${escapeHtml(state.settingsData[key] || "")}</textarea></div>
       <button class="btn-save" type="submit">Lưu Danh Sách</button>
     </form>
-  `;
+  `);
 }
 
 function renderDisplaySettings() {
   const s = state.settingsData.settings;
-  return `
+  return settingsCard("Cài đặt Hiển thị", "display", `
     <form id="save-display-form">
-      <h3>Cài đặt Hiển thị</h3>
+      <p class="muted">Bật/tắt và sắp xếp các thành phần hiển thị trên trang chủ.</p>
+      <h4>Nội dung Panel (Bật/Tắt)</h4>
       <div class="check-list">
         ${checkbox("display_account_panel", "Panel Tài Khoản Chính", s.display_account_panel)}
         ${checkbox("display_video_panel", "Panel Xem Video", s.display_video_panel)}
@@ -471,13 +492,13 @@ function renderDisplaySettings() {
       <div class="form-group"><label>Thứ tự panel</label><input name="display_panel_order" value="${escapeAttr(s.display_panel_order || "")}" /></div>
       <button class="btn-save" type="submit">Lưu Cài đặt Hiển thị</button>
     </form>
-  `;
+  `);
 }
 
 function renderManagerPanel() {
-  if (state.selectedManagerPanel === "employees") return `<div id="manager-content">${renderEmployeeManager()}</div>`;
-  if (state.selectedManagerPanel === "links") return `<div id="manager-content">${renderStatsManager("link")}</div>`;
-  if (state.selectedManagerPanel === "twofa") return `<div id="manager-content">${renderStatsManager("twofa")}</div>`;
+  if (state.selectedManagerPanel === "employees") return settingsCard("Quản lý Nhân viên", "users", `<div id="manager-content">${renderEmployeeManager()}</div>`);
+  if (state.selectedManagerPanel === "links") return settingsCard("Quản lý Link Đã Đăng", "list", `<div id="manager-content">${renderStatsManager("link")}</div>`);
+  if (state.selectedManagerPanel === "twofa") return settingsCard("Quản lý Dữ liệu 2FA", "shield", `<div id="manager-content">${renderStatsManager("twofa")}</div>`);
   return "";
 }
 
