@@ -1,10 +1,12 @@
+const CURRENT_ACCOUNT_STORAGE_KEY = "ahhd_current_account";
+
 const state = {
   page: location.pathname.includes("settings") ? "settings" : "home",
   data: null,
   settingsData: null,
   selectedSettingsPanel: "general",
   selectedManagerPanel: null,
-  currentAccount: null
+  currentAccount: loadStoredCurrentAccount()
 };
 
 const app = document.getElementById("app");
@@ -138,66 +140,83 @@ function renderAccountPanel(settings) {
   const issuedUsername = issued.username || "";
   const issuedPassword = issued.password || "";
   const issuedSecret = issued.twofaSecret || "";
-  const output = state.currentAccount
-    ? `<div class="output-box issued-output">
-        <div>
-          <strong>Tài khoản vừa cấp:</strong>
-          <div>${escapeHtml(issuedRaw)}</div>
-        </div>
-        <button type="button" class="copy-icon-btn" data-copy="${escapeAttr(issuedRaw)}" aria-label="Copy tài khoản vừa cấp">Copy</button>
-      </div>`
-    : "";
-  const twofaForm = settings.display.display_2fa_form === "true" ? `
-    <form id="save-2fa-client-form" class="form-grid">
+  const issuedType = state.currentAccount?.issuedType || "mail";
+  const emptyState = `
+    <p class="muted">Chọn loại tài khoản bạn muốn lấy:</p>
+    <div class="button-row primary-actions">
+      <button class="btn-primary" data-action="get-account" data-type="mail">Lấy Mail Đăng ký</button>
+      <button class="btn-primary" data-action="get-account" data-type="normal">Lấy Tài khoản Thường</button>
+      <button class="btn-primary" data-action="get-account" data-type="2fa">Lấy Tài khoản 2FA</button>
+      <button data-action="clear-account">Xóa hiển thị</button>
+    </div>
+  `;
+  const issuedState = `
+    <form id="save-2fa-client-form" class="issued-card">
+      <div class="issued-id-row">
+        <span></span>
+        <strong>${state.currentAccount?.id ? `#${state.currentAccount.id}` : ""}</strong>
+        <button type="button" class="copy-icon-btn compact" data-copy="${escapeAttr(issuedRaw)}" aria-label="Copy tài khoản vừa cấp">Copy</button>
+      </div>
       <div class="form-group">
-        <label>Email</label>
+        <label>E-Mail:</label>
         <div class="copy-field">
-          <input name="email" placeholder="Email..." value="${escapeAttr(issuedEmail)}" />
+          <input name="email" value="${escapeAttr(issuedEmail)}" placeholder="Email..." />
           <button type="button" class="copy-icon-btn" data-copy="${escapeAttr(issuedEmail)}" aria-label="Copy email">Copy</button>
         </div>
       </div>
       <div class="form-group">
-        <label>Tài khoản</label>
+        <label>Password:</label>
         <div class="copy-field">
-          <input name="username" placeholder="Username..." value="${escapeAttr(issuedUsername)}" />
-          <button type="button" class="copy-icon-btn" data-copy="${escapeAttr(issuedUsername)}" aria-label="Copy tài khoản">Copy</button>
+          <input name="mail_password" value="${escapeAttr(issuedPassword)}" placeholder="Password..." />
+          <button type="button" class="copy-icon-btn" data-copy="${escapeAttr(issuedPassword)}" aria-label="Copy password">Copy</button>
+        </div>
+      </div>
+      <div class="issued-actions two-col">
+        <button type="button" class="btn-green" data-action="get-mail-code"># Get Code</button>
+        <button type="button" class="btn-teal" data-action="open-mailbox">Đọc Hòm Thư</button>
+      </div>
+      <div class="issued-divider"></div>
+      <div class="form-group">
+        <label>User TikTok:</label>
+        <div class="copy-field dual-copy">
+          <input name="username" value="${escapeAttr(issuedUsername)}" placeholder="Nhập User TikTok mới tạo" />
+          <button type="button" class="copy-icon-btn" data-copy="${escapeAttr(issuedUsername)}" aria-label="Copy user TikTok">Copy</button>
+          <button type="button" class="copy-icon-btn" data-copy="${escapeAttr(issuedUsername)}" aria-label="Copy user TikTok">Copy</button>
         </div>
       </div>
       <div class="form-group">
-        <label>Mật khẩu</label>
-        <div class="copy-field">
-          <input name="password" placeholder="Password..." value="${escapeAttr(issuedPassword)}" />
-          <button type="button" class="copy-icon-btn" data-copy="${escapeAttr(issuedPassword)}" aria-label="Copy mật khẩu">Copy</button>
+        <label>Password:</label>
+        <div class="copy-field dual-copy">
+          <input name="password" value="${escapeAttr(settings.defaultPasswordEnabled ? settings.defaultPassword : issuedPassword)}" placeholder="Password..." />
+          <button type="button" class="copy-icon-btn" data-copy="${escapeAttr(settings.defaultPasswordEnabled ? settings.defaultPassword : issuedPassword)}" aria-label="Copy password">Copy</button>
+          <button type="button" class="copy-icon-btn" data-copy="${escapeAttr(settings.defaultPasswordEnabled ? settings.defaultPassword : issuedPassword)}" aria-label="Copy password">Copy</button>
         </div>
       </div>
       <div class="form-group">
-        <label>Secret 2FA</label>
-        <div class="copy-field">
-          <input name="secret" placeholder="Secret key..." value="${escapeAttr(issuedSecret)}" />
-          <button type="button" class="copy-icon-btn" data-copy="${escapeAttr(issuedSecret)}" aria-label="Copy secret 2FA">Copy</button>
+        <label>Mã 2FA:</label>
+        <div class="copy-field dual-copy">
+          <input name="secret" value="${escapeAttr(issuedSecret)}" placeholder="Để trống nếu không có 2FA" />
+          <button type="button" class="copy-icon-btn" data-copy="${escapeAttr(issuedSecret)}" aria-label="Copy 2FA">Copy</button>
+          <button type="button" class="copy-icon-btn" data-copy="${escapeAttr(issuedSecret)}" aria-label="Copy 2FA">Copy</button>
         </div>
       </div>
-      <div class="form-group full"><button class="btn-save" type="submit">Lưu 2FA</button></div>
-    </form>` : "";
+      <button class="btn-save wide" type="submit">Lưu Tài Khoản</button>
+      <button type="button" class="btn-refresh wide" data-action="get-account" data-type="${escapeAttr(issuedType)}">Lấy tài khoản khác</button>
+    </form>
+  `;
   return `
     <section class="panel account-panel">
-      <div class="panel-header"><span>Tài Khoản</span><small>Cấp nhanh cho người dùng</small></div>
+      <div class="panel-header account-header">
+        <span>Tài Khoản</span>
+        <div class="account-header-stats">
+          <span>Mail ĐK: <strong>${stats.remainingMail}</strong></span>
+          <span>TK Thường: <strong>${stats.remainingNormal}</strong></span>
+          <span>2FA: <strong>${stats.remaining2FA}</strong></span>
+          <span>H.nay: <strong>${stats.usedToday}</strong></span>
+        </div>
+      </div>
       <div class="panel-body">
-        <div class="stats">
-          <div class="stat">Mail ĐK:<strong>${stats.remainingMail}</strong></div>
-          <div class="stat">TK Thường:<strong>${stats.remainingNormal}</strong></div>
-          <div class="stat">2FA:<strong>${stats.remaining2FA}</strong></div>
-          <div class="stat">H.nay:<strong>${stats.usedToday}</strong></div>
-        </div>
-        <p class="muted">Chọn loại tài khoản bạn muốn lấy:</p>
-        <div class="button-row primary-actions">
-          <button class="btn-primary" data-action="get-account" data-type="mail">Lấy Mail Đăng ký</button>
-          <button class="btn-primary" data-action="get-account" data-type="normal">Lấy Tài khoản Thường</button>
-          <button class="btn-primary" data-action="get-account" data-type="2fa">Lấy Tài khoản 2FA</button>
-          <button data-action="clear-account">Xóa hiển thị</button>
-        </div>
-        ${output}
-        ${twofaForm}
+        ${state.currentAccount ? issuedState : emptyState}
       </div>
     </section>
   `;
@@ -574,13 +593,15 @@ async function handleAction(event) {
       const endpoint = type === "normal" ? "get_normal_account_client" : type === "2fa" ? "get_2fa_account_client" : "get_account_client";
       const result = await api(endpoint);
       if (!result.ok) throw new Error(result.message);
-      state.currentAccount = result;
+      state.currentAccount = { ...result, issuedType: type, savedAt: Date.now() };
+      saveStoredCurrentAccount(state.currentAccount);
       await loadInitialData();
       render();
       showToast(result.message);
     }
     if (action === "clear-account") {
       state.currentAccount = null;
+      clearStoredCurrentAccount();
       render();
     }
     if (action === "paste-links") {
@@ -590,6 +611,14 @@ async function handleAction(event) {
     }
     if (action === "show-link-stats") {
       await showLinkStatsModal();
+    }
+    if (action === "get-mail-code") {
+      const email = document.querySelector('input[name="email"]')?.value || "";
+      const result = await api("get_tiktok_mail_code", { email });
+      showToast(result.code ? `Code: ${result.code}` : result.message || "Chưa có code.");
+    }
+    if (action === "open-mailbox") {
+      showToast("Chưa cấu hình hòm thư/API đọc mail.", true);
     }
     if (action === "add-employee") addEmployeeRow();
     if (action === "save-employees") await saveEmployeeRows();
@@ -813,6 +842,31 @@ function escapeHtml(value) {
 
 function escapeAttr(value) {
   return escapeHtml(value);
+}
+
+function loadStoredCurrentAccount() {
+  try {
+    const raw = localStorage.getItem(CURRENT_ACCOUNT_STORAGE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+function saveStoredCurrentAccount(account) {
+  try {
+    localStorage.setItem(CURRENT_ACCOUNT_STORAGE_KEY, JSON.stringify(account));
+  } catch {
+    // Ignore storage failures; the current page state still works.
+  }
+}
+
+function clearStoredCurrentAccount() {
+  try {
+    localStorage.removeItem(CURRENT_ACCOUNT_STORAGE_KEY);
+  } catch {
+    // Ignore storage failures.
+  }
 }
 
 window.addEventListener("popstate", () => {

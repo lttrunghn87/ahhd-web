@@ -140,6 +140,33 @@ a {
   font-weight: 600;
 }
 
+.account-header {
+  align-items: center;
+}
+
+.account-header > span {
+  font-size: 18px;
+}
+
+.account-header-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px;
+  align-items: center;
+  color: #98a2b3;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.account-header-stats strong {
+  color: var(--ok);
+  font-size: 17px;
+}
+
+.account-header-stats span:last-child strong {
+  color: #e0a100;
+}
+
 .panel-body {
   padding: 16px;
 }
@@ -300,6 +327,10 @@ textarea {
   grid-template-columns: minmax(0, 1fr) 54px;
 }
 
+.copy-field.dual-copy {
+  grid-template-columns: minmax(0, 1fr) 46px 46px;
+}
+
 .copy-field input {
   border-bottom-right-radius: 0;
   border-top-right-radius: 0;
@@ -317,6 +348,24 @@ textarea {
   font-size: 12px;
 }
 
+.copy-icon-btn.compact {
+  min-width: 40px;
+  width: 40px;
+  font-size: 0;
+}
+
+.copy-icon-btn.compact::before,
+.copy-icon-btn:not(.compact)::before {
+  content: "⧉";
+  color: #334155;
+  font-size: 16px;
+  line-height: 1;
+}
+
+.copy-icon-btn:not(.compact) {
+  color: transparent;
+}
+
 .issued-output .copy-icon-btn {
   height: 40px;
   align-self: start;
@@ -326,6 +375,81 @@ textarea {
 
 .copy-icon-btn:hover {
   background: #eff6ff;
+}
+
+.issued-card {
+  display: grid;
+  gap: 12px;
+}
+
+.issued-card .form-group {
+  margin-bottom: 0;
+}
+
+.issued-card label {
+  font-size: 15px;
+}
+
+.issued-id-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 8px;
+  align-items: center;
+  min-height: 26px;
+}
+
+.issued-actions {
+  display: grid;
+  gap: 12px;
+}
+
+.issued-actions.two-col {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.btn-green,
+.btn-teal,
+.btn-refresh {
+  border-color: transparent;
+  color: #ffffff;
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.btn-green {
+  background: #29a94a;
+}
+
+.btn-green:hover {
+  background: #208b3c;
+}
+
+.btn-teal {
+  background: #21a6b8;
+}
+
+.btn-teal:hover {
+  background: #168b9c;
+}
+
+.btn-refresh {
+  background: #56a9e6;
+  box-shadow: 0 4px 12px rgb(37 99 235 / 0.18);
+}
+
+.btn-refresh:hover {
+  background: #3f96d4;
+}
+
+.wide {
+  width: 100%;
+  min-height: 44px;
+}
+
+.issued-divider {
+  height: 2px;
+  margin: 12px 0 2px;
+  background: var(--primary);
 }
 
 .settings-layout {
@@ -577,5 +701,32 @@ th {
 
   .issued-output .copy-icon-btn {
     width: 100%;
+  }
+
+  .account-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .account-header-stats {
+    gap: 8px 12px;
+    font-size: 13px;
+  }
+
+  .issued-actions.two-col,
+  .copy-field.dual-copy {
+    grid-template-columns: 1fr;
+  }
+
+  .copy-field input,
+  .copy-field.dual-copy input {
+    border-radius: 6px;
+  }
+
+  .copy-field .copy-icon-btn,
+  .copy-field.dual-copy .copy-icon-btn {
+    width: 100%;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
   }
 }
