@@ -144,12 +144,13 @@ function renderAccountPanel(settings) {
   const displayedUsername = issuedUsername || issuedEmail;
   const displayedPassword = issuedType === "mail" ? issuedPassword : (settings.defaultPasswordEnabled ? settings.defaultPassword : issuedPassword);
   const emptyState = `
-    <p class="muted">Chọn loại tài khoản bạn muốn lấy:</p>
-    <div class="button-row primary-actions">
-      <button class="btn-primary" data-action="get-account" data-type="mail">Lấy Mail Đăng ký</button>
-      <button class="btn-primary" data-action="get-account" data-type="normal">Lấy Tài khoản Thường</button>
-      <button class="btn-primary" data-action="get-account" data-type="2fa">Lấy Tài khoản 2FA</button>
-      <button data-action="clear-account">Xóa hiển thị</button>
+    <div class="account-choice">
+      <p class="muted">Chọn loại tài khoản bạn muốn lấy:</p>
+      <div class="account-choice-actions">
+        <button class="btn-refresh" data-action="get-account" data-type="mail">${settingsIcon("mail")}<span>Lấy Mail Đăng ký</span></button>
+        <button class="btn-refresh" data-action="get-account" data-type="normal">${settingsIcon("users")}<span>Lấy Tài khoản Thường</span></button>
+        <button class="btn-green" data-action="get-account" data-type="2fa">${settingsIcon("shield")}<span>Lấy Tài khoản 2FA</span></button>
+      </div>
     </div>
   `;
   const issuedState = `

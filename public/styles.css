@@ -226,6 +226,44 @@ button,
   min-height: 42px;
 }
 
+.account-choice {
+  display: grid;
+  gap: 42px;
+  padding: 62px 18px 44px;
+  text-align: center;
+}
+
+.account-choice .muted {
+  margin: 0;
+  font-size: 20px;
+}
+
+.account-choice-actions {
+  display: grid;
+  gap: 12px;
+  width: min(100%, 760px);
+  margin: 0 auto;
+}
+
+.account-choice-actions button {
+  display: inline-flex;
+  min-height: 54px;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  border: 0;
+  color: #ffffff;
+  font-size: 18px;
+  box-shadow: 0 4px 12px rgb(15 23 42 / 0.12);
+}
+
+.account-choice-actions .settings-icon,
+.account-choice-actions .settings-icon svg {
+  width: 22px;
+  height: 22px;
+  color: #ffffff;
+}
+
 button:hover,
 .action-button:hover {
   border-color: var(--primary);
