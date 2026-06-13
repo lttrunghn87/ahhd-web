@@ -113,7 +113,20 @@ function renderHome() {
     link_submission_panel: renderLinkSubmissionPanel
   };
   const html = order.map((id) => panels[id]?.(settings)).filter(Boolean).join("");
-  app.innerHTML = `<div class="dashboard-grid">${html || `<section class="panel"><div class="empty">Chưa bật panel nào.</div></section>`}</div>`;
+  app.innerHTML = `
+    <div class="page-head">
+      <div>
+        <p class="page-eyebrow">Bảng điều khiển</p>
+        <h1>Hệ thống cấp tài khoản</h1>
+      </div>
+      <div class="head-meta">
+        <span>Mail: ${state.data.stats.remainingMail}</span>
+        <span>TK thường: ${state.data.stats.remainingNormal}</span>
+        <span>2FA: ${state.data.stats.remaining2FA}</span>
+      </div>
+    </div>
+    <div class="dashboard-grid">${html || `<section class="panel"><div class="empty">Chưa bật panel nào.</div></section>`}</div>
+  `;
 }
 
 function renderAccountPanel(settings) {
@@ -131,8 +144,8 @@ function renderAccountPanel(settings) {
       <div class="form-group full"><button class="btn-save" type="submit">Lưu 2FA</button></div>
     </form>` : "";
   return `
-    <section class="panel">
-      <div class="panel-header">Tài Khoản</div>
+    <section class="panel account-panel">
+      <div class="panel-header"><span>Tài Khoản</span><small>Cấp nhanh cho người dùng</small></div>
       <div class="panel-body">
         <div class="stats">
           <div class="stat">Mail ĐK:<strong>${stats.remainingMail}</strong></div>
@@ -141,7 +154,7 @@ function renderAccountPanel(settings) {
           <div class="stat">H.nay:<strong>${stats.usedToday}</strong></div>
         </div>
         <p class="muted">Chọn loại tài khoản bạn muốn lấy:</p>
-        <div class="button-row">
+        <div class="button-row primary-actions">
           <button class="btn-primary" data-action="get-account" data-type="mail">Lấy Mail Đăng ký</button>
           <button class="btn-primary" data-action="get-account" data-type="normal">Lấy Tài khoản Thường</button>
           <button class="btn-primary" data-action="get-account" data-type="2fa">Lấy Tài khoản 2FA</button>
@@ -157,8 +170,8 @@ function renderAccountPanel(settings) {
 function renderSearchPanel(settings) {
   if (settings.display.display_search_old_accounts_panel !== "true") return "";
   return `
-    <section class="panel half">
-      <div class="panel-header">Tra Cứu Tài Khoản Cũ</div>
+    <section class="panel search-panel">
+      <div class="panel-header"><span>Tra Cứu Tài Khoản Cũ</span><small>Tìm theo STT hoặc tài khoản</small></div>
       <div class="panel-body">
         <input id="old-account-search" placeholder="Gõ #STT hoặc tên tài khoản để tìm..." />
         <div id="search-results" class="search-results">Gõ để tìm kiếm...</div>
@@ -170,8 +183,8 @@ function renderSearchPanel(settings) {
 function renderVideoPanel(settings) {
   if (settings.display.display_video_panel !== "true") return "";
   return `
-    <section class="panel half">
-      <div class="panel-header">Xem Video</div>
+    <section class="panel video-panel">
+      <div class="panel-header"><span>Xem Video</span><small>Mở nhóm video nhanh</small></div>
       <div class="panel-body">
         <div class="button-row">
           ${settings.display.display_video_normal_60 === "true" ? `<button data-video-group="normal">Video Thường 60p</button>` : ""}
@@ -186,8 +199,8 @@ function renderVideoPanel(settings) {
 function renderIcloudPanel(settings) {
   if (settings.display.display_icloud_panel !== "true") return "";
   return `
-    <section class="panel half">
-      <div class="panel-header">Thông tin iCloud</div>
+    <section class="panel utility-panel icloud-panel">
+      <div class="panel-header"><span>Thông tin iCloud</span><small>Copy nhanh</small></div>
       <div class="panel-body">
         <div class="form-group"><label>Tài khoản:</label><div class="button-row"><input readonly value="${escapeAttr(settings.icloudAccount || "")}" /><button data-copy="${escapeAttr(settings.icloudAccount || "")}">Copy</button></div></div>
         <div class="form-group"><label>Mật khẩu:</label><div class="button-row"><input readonly value="${escapeAttr(settings.icloudPassword || "")}" /><button data-copy="${escapeAttr(settings.icloudPassword || "")}">Copy</button></div></div>
@@ -200,8 +213,8 @@ function renderWithdrawalPanel(settings) {
   if (settings.display.display_withdrawal_email_panel !== "true") return "";
   const email = randomEmail(settings.withdrawalDomain || "ahhd.pages.dev");
   return `
-    <section class="panel half">
-      <div class="panel-header">Email Rút tiền nhanh</div>
+    <section class="panel utility-panel withdrawal-panel">
+      <div class="panel-header"><span>Email Rút tiền nhanh</span><small>Tạo tự động</small></div>
       <div class="panel-body">
         <div class="button-row"><input readonly value="${email}" /><button data-copy="${email}">Copy</button></div>
       </div>
@@ -213,8 +226,8 @@ function renderLinkSubmissionPanel(settings) {
   if (settings.display.display_link_submission_panel !== "true") return "";
   const requireEmployee = settings.display.display_employee_required === "true";
   return `
-    <section class="panel">
-      <div class="panel-header">Đăng Link Giftee</div>
+    <section class="panel link-panel">
+      <div class="panel-header"><span>Đăng Link Giftee</span><small>Lưu link theo nhân viên</small></div>
       <div class="panel-body">
         <form id="submit-links-form">
           ${requireEmployee ? `<div class="form-group"><label>Nhân viên</label><select name="employee" required><option value="">-- Chọn nhân viên --</option>${state.data.employees.map((name) => `<option>${escapeHtml(name)}</option>`).join("")}</select></div>` : `<input type="hidden" name="employee" value="Không chọn" />`}
@@ -248,6 +261,17 @@ function renderSettings() {
     return;
   }
   app.innerHTML = `
+    <div class="page-head">
+      <div>
+        <p class="page-eyebrow">Quản trị hệ thống</p>
+        <h1>Settings</h1>
+      </div>
+      <div class="head-meta">
+        <span>Video</span>
+        <span>Tài khoản</span>
+        <span>Nhân viên</span>
+      </div>
+    </div>
     <div class="quick-actions">
       <button data-manager-panel="employees">Quản lý NV</button>
       <button data-manager-panel="links">Quản lý Link</button>

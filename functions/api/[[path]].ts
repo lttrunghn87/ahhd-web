@@ -9,6 +9,7 @@ type Ctx = {
 };
 
 const SESSION_MAX_AGE = 60 * 60 * 12;
+let schemaReady = false;
 const DEFAULT_VIDEO_LITE_60 = [
   "https://lite.tiktok.com/t/ZSrJxNmCK/",
   "https://lite.tiktok.com/t/ZSM43sfyA/",
@@ -168,6 +169,8 @@ export const onRequest = async (ctx: Ctx) => {
 };
 
 async function ensureSchema(db: D1Database) {
+  if (schemaReady) return;
+
   await db.exec(`
     CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT NOT NULL);
     CREATE TABLE IF NOT EXISTS account_pool (id INTEGER PRIMARY KEY AUTOINCREMENT, type TEXT NOT NULL, raw TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'available', issued_at TEXT, created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP);
@@ -181,12 +184,20 @@ async function ensureSchema(db: D1Database) {
     defaultSettings.settings_password_hash = await sha256("d");
     defaultSettings.manager_password_hash = await sha256("d");
   }
-  for (const [key, value] of Object.entries(defaultSettings)) {
-    await db.prepare("INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)").bind(key, value).run();
+
+  const marker = await db.prepare("SELECT value FROM settings WHERE key = 'schema_initialized'").first<any>();
+  if (!marker) {
+    const statements = Object.entries(defaultSettings).map(([key, value]) =>
+      db.prepare("INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)").bind(key, value)
+    );
+    statements.push(db.prepare("INSERT OR IGNORE INTO settings (key, value) VALUES ('schema_initialized', 'true')"));
+    for (const name of ["Hung", "Truong", "Tuan Anh", "Cuong", "Huyen"]) {
+      statements.push(db.prepare("INSERT OR IGNORE INTO employees (name) VALUES (?)").bind(name));
+    }
+    await db.batch(statements);
   }
-  for (const name of ["Hung", "Truong", "Tuan Anh", "Cuong", "Huyen"]) {
-    await db.prepare("INSERT OR IGNORE INTO employees (name) VALUES (?)").bind(name).run();
-  }
+
+  schemaReady = true;
 }
 
 async function getInitialData(db: D1Database, session: Record<string, boolean>) {
