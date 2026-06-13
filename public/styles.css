@@ -264,6 +264,27 @@ button,
   color: #ffffff;
 }
 
+.account-switch {
+  display: grid;
+  gap: 8px;
+}
+
+.account-switch .muted {
+  margin: 0;
+  font-weight: 700;
+}
+
+.account-switch-actions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.account-switch-actions button {
+  border: 0;
+  color: #ffffff;
+}
+
 button:hover,
 .action-button:hover {
   border-color: var(--primary);

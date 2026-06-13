@@ -184,7 +184,14 @@ function renderAccountPanel(settings) {
         </div>
       </div>
       <button class="btn-save wide" type="submit">Lưu Tài Khoản</button>
-      <button type="button" class="btn-refresh wide" data-action="get-account" data-type="${escapeAttr(issuedType)}">Lấy tài khoản khác</button>
+      <div class="account-switch">
+        <p class="muted">Đổi loại tài khoản:</p>
+        <div class="account-switch-actions">
+          <button type="button" class="btn-refresh" data-action="get-account" data-type="mail">Mail ĐK</button>
+          <button type="button" class="btn-refresh" data-action="get-account" data-type="normal">TK Thường</button>
+          <button type="button" class="btn-green" data-action="get-account" data-type="2fa">TK 2FA</button>
+        </div>
+      </div>
       <button type="button" class="wide" data-action="clear-account">Chọn loại tài khoản khác</button>
     </form>
   `;
