@@ -152,11 +152,6 @@ function renderAccountPanel(settings) {
   `;
   const issuedState = `
     <form id="save-2fa-client-form" class="issued-card">
-      <div class="issued-id-row">
-        <span></span>
-        <strong>${state.currentAccount?.id ? `#${state.currentAccount.id}` : ""}</strong>
-        <button type="button" class="copy-icon-btn compact" data-copy="${escapeAttr(issuedRaw)}" aria-label="Copy tài khoản vừa cấp">Copy</button>
-      </div>
       <div class="form-group">
         <label>E-Mail:</label>
         <div class="copy-field">
@@ -178,25 +173,22 @@ function renderAccountPanel(settings) {
       <div class="issued-divider"></div>
       <div class="form-group">
         <label>User TikTok:</label>
-        <div class="copy-field dual-copy">
+        <div class="copy-field">
           <input name="username" value="${escapeAttr(issuedUsername)}" placeholder="Nhập User TikTok mới tạo" />
-          <button type="button" class="copy-icon-btn" data-copy="${escapeAttr(issuedUsername)}" aria-label="Copy user TikTok">Copy</button>
           <button type="button" class="copy-icon-btn" data-copy="${escapeAttr(issuedUsername)}" aria-label="Copy user TikTok">Copy</button>
         </div>
       </div>
       <div class="form-group">
         <label>Password:</label>
-        <div class="copy-field dual-copy">
+        <div class="copy-field">
           <input name="password" value="${escapeAttr(settings.defaultPasswordEnabled ? settings.defaultPassword : issuedPassword)}" placeholder="Password..." />
-          <button type="button" class="copy-icon-btn" data-copy="${escapeAttr(settings.defaultPasswordEnabled ? settings.defaultPassword : issuedPassword)}" aria-label="Copy password">Copy</button>
           <button type="button" class="copy-icon-btn" data-copy="${escapeAttr(settings.defaultPasswordEnabled ? settings.defaultPassword : issuedPassword)}" aria-label="Copy password">Copy</button>
         </div>
       </div>
       <div class="form-group">
         <label>Mã 2FA:</label>
-        <div class="copy-field dual-copy">
+        <div class="copy-field">
           <input name="secret" value="${escapeAttr(issuedSecret)}" placeholder="Để trống nếu không có 2FA" />
-          <button type="button" class="copy-icon-btn" data-copy="${escapeAttr(issuedSecret)}" aria-label="Copy 2FA">Copy</button>
           <button type="button" class="copy-icon-btn" data-copy="${escapeAttr(issuedSecret)}" aria-label="Copy 2FA">Copy</button>
         </div>
       </div>

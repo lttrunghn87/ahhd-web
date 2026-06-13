@@ -327,10 +327,6 @@ textarea {
   grid-template-columns: minmax(0, 1fr) 54px;
 }
 
-.copy-field.dual-copy {
-  grid-template-columns: minmax(0, 1fr) 46px 46px;
-}
-
 .copy-field input {
   border-bottom-right-radius: 0;
   border-top-right-radius: 0;
@@ -388,14 +384,6 @@ textarea {
 
 .issued-card label {
   font-size: 15px;
-}
-
-.issued-id-row {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto auto;
-  gap: 8px;
-  align-items: center;
-  min-height: 26px;
 }
 
 .issued-actions {
@@ -717,10 +705,6 @@ th {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .copy-field.dual-copy {
-    grid-template-columns: minmax(0, 1fr) 42px 42px;
-  }
-
   .copy-field input {
     border-bottom-right-radius: 0;
     border-top-right-radius: 0;
@@ -834,10 +818,6 @@ th {
     gap: 10px;
   }
 
-  .issued-id-row {
-    min-height: 22px;
-  }
-
   .form-group {
     gap: 4px;
     margin-bottom: 10px;
@@ -858,10 +838,6 @@ th {
 
   .copy-field {
     grid-template-columns: minmax(0, 1fr) 40px;
-  }
-
-  .copy-field.dual-copy {
-    grid-template-columns: minmax(0, 1fr) 38px 38px;
   }
 
   .copy-icon-btn {
