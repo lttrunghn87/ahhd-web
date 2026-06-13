@@ -132,15 +132,51 @@ function renderHome() {
 function renderAccountPanel(settings) {
   if (settings.display.display_account_panel !== "true") return "";
   const stats = state.data.stats;
+  const issued = state.currentAccount?.account || {};
+  const issuedRaw = state.currentAccount?.raw || "";
+  const issuedEmail = issued.email || "";
+  const issuedUsername = issued.username || "";
+  const issuedPassword = issued.password || "";
+  const issuedSecret = issued.twofaSecret || "";
   const output = state.currentAccount
-    ? `<div class="output-box"><strong>Tài khoản vừa cấp:</strong>\n${escapeHtml(state.currentAccount.raw || "")}</div>`
+    ? `<div class="output-box issued-output">
+        <div>
+          <strong>Tài khoản vừa cấp:</strong>
+          <div>${escapeHtml(issuedRaw)}</div>
+        </div>
+        <button type="button" class="copy-icon-btn" data-copy="${escapeAttr(issuedRaw)}" aria-label="Copy tài khoản vừa cấp">Copy</button>
+      </div>`
     : "";
   const twofaForm = settings.display.display_2fa_form === "true" ? `
     <form id="save-2fa-client-form" class="form-grid">
-      <div class="form-group"><label>Email</label><input name="email" placeholder="Email..." /></div>
-      <div class="form-group"><label>Tài khoản</label><input name="username" placeholder="Username..." /></div>
-      <div class="form-group"><label>Mật khẩu</label><input name="password" placeholder="Password..." /></div>
-      <div class="form-group"><label>Secret 2FA</label><input name="secret" placeholder="Secret key..." /></div>
+      <div class="form-group">
+        <label>Email</label>
+        <div class="copy-field">
+          <input name="email" placeholder="Email..." value="${escapeAttr(issuedEmail)}" />
+          <button type="button" class="copy-icon-btn" data-copy="${escapeAttr(issuedEmail)}" aria-label="Copy email">Copy</button>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Tài khoản</label>
+        <div class="copy-field">
+          <input name="username" placeholder="Username..." value="${escapeAttr(issuedUsername)}" />
+          <button type="button" class="copy-icon-btn" data-copy="${escapeAttr(issuedUsername)}" aria-label="Copy tài khoản">Copy</button>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Mật khẩu</label>
+        <div class="copy-field">
+          <input name="password" placeholder="Password..." value="${escapeAttr(issuedPassword)}" />
+          <button type="button" class="copy-icon-btn" data-copy="${escapeAttr(issuedPassword)}" aria-label="Copy mật khẩu">Copy</button>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Secret 2FA</label>
+        <div class="copy-field">
+          <input name="secret" placeholder="Secret key..." value="${escapeAttr(issuedSecret)}" />
+          <button type="button" class="copy-icon-btn" data-copy="${escapeAttr(issuedSecret)}" aria-label="Copy secret 2FA">Copy</button>
+        </div>
+      </div>
       <div class="form-group full"><button class="btn-save" type="submit">Lưu 2FA</button></div>
     </form>` : "";
   return `

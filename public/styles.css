@@ -283,6 +283,51 @@ textarea {
   white-space: pre-wrap;
 }
 
+.issued-output {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: start;
+}
+
+.issued-output strong {
+  display: block;
+  margin-bottom: 4px;
+}
+
+.copy-field {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 54px;
+}
+
+.copy-field input {
+  border-bottom-right-radius: 0;
+  border-top-right-radius: 0;
+}
+
+.copy-icon-btn {
+  min-width: 54px;
+  min-height: 40px;
+  border-left: 0;
+  border-bottom-left-radius: 0;
+  border-top-left-radius: 0;
+  padding: 0 8px;
+  background: #ffffff;
+  color: #334155;
+  font-size: 12px;
+}
+
+.issued-output .copy-icon-btn {
+  height: 40px;
+  align-self: start;
+  border-left: 1px solid #cbd5e1;
+  border-radius: 6px;
+}
+
+.copy-icon-btn:hover {
+  background: #eff6ff;
+}
+
 .settings-layout {
   display: grid;
   grid-template-columns: 220px 1fr;
@@ -524,5 +569,13 @@ th {
 
   .utility-panel .button-row {
     grid-template-columns: 1fr;
+  }
+
+  .issued-output {
+    grid-template-columns: 1fr;
+  }
+
+  .issued-output .copy-icon-btn {
+    width: 100%;
   }
 }
