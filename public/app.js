@@ -11,7 +11,18 @@ const app = document.getElementById("app");
 const navbar = document.getElementById("navbar");
 const modalRoot = document.getElementById("modal-root");
 
-init();
+init().catch((error) => {
+  app.innerHTML = `
+    <section class="panel" style="max-width: 720px; margin: 30px auto;">
+      <div class="panel-header">Không tải được ứng dụng</div>
+      <div class="panel-body">
+        <p>API đang báo lỗi nên trang chưa mở được.</p>
+        <div class="output-box">${escapeHtml(error.message)}</div>
+        <p class="muted">Nếu lỗi liên quan DB, hãy kiểm tra Cloudflare Pages Production Bindings có D1 binding tên DB chưa, rồi redeploy.</p>
+      </div>
+    </section>
+  `;
+});
 
 async function init() {
   await loadInitialData();
