@@ -185,6 +185,7 @@ function renderAccountPanel(settings) {
       </div>
       <button class="btn-save wide" type="submit">Lưu Tài Khoản</button>
       <button type="button" class="btn-refresh wide" data-action="get-account" data-type="${escapeAttr(issuedType)}">Lấy tài khoản khác</button>
+      <button type="button" class="wide" data-action="clear-account">Chọn loại tài khoản khác</button>
     </form>
   `;
   return `
