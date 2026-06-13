@@ -140,9 +140,12 @@ function renderAccountPanel(settings) {
   const issuedUsername = issued.username || "";
   const issuedPassword = issued.password || "";
   const issuedSecret = issued.twofaSecret || "";
+  const issued2FACode = issued.twofaCode || "";
   const issuedType = state.currentAccount?.issuedType || "mail";
   const displayedUsername = issuedUsername || issuedEmail;
   const displayedPassword = issuedType === "mail" ? issuedPassword : (settings.defaultPasswordEnabled ? settings.defaultPassword : issuedPassword);
+  const displayed2FA = issuedType === "2fa" && issued2FACode ? issued2FACode : issuedSecret;
+  const twofaInputName = issuedType === "2fa" && issued2FACode ? "twofa_code" : "secret";
   const emptyState = `
     <div class="account-choice">
       <p class="muted">Chọn loại tài khoản bạn muốn lấy:</p>
@@ -162,6 +165,7 @@ function renderAccountPanel(settings) {
         <button type="button" class="btn-teal" data-action="open-mailbox">Đọc Hòm Thư</button>
       </div>
       <div class="issued-divider"></div>
+      ${issuedType === "2fa" && issuedSecret ? `<input type="hidden" name="secret" value="${escapeAttr(issuedSecret)}" />` : ""}
       <div class="form-group">
         <label>User TikTok:</label>
         <div class="copy-field">
@@ -179,8 +183,8 @@ function renderAccountPanel(settings) {
       <div class="form-group">
         <label>Mã 2FA:</label>
         <div class="copy-field">
-          <input name="secret" value="${escapeAttr(issuedSecret)}" placeholder="Để trống nếu không có 2FA" />
-          <button type="button" class="copy-icon-btn" data-copy="${escapeAttr(issuedSecret)}" aria-label="Copy 2FA">Copy</button>
+          <input name="${twofaInputName}" value="${escapeAttr(displayed2FA)}" placeholder="Để trống nếu không có 2FA" />
+          <button type="button" class="copy-icon-btn" data-copy="${escapeAttr(displayed2FA)}" aria-label="Copy 2FA">Copy</button>
         </div>
       </div>
       <button class="btn-save wide" type="submit">Lưu Tài Khoản</button>

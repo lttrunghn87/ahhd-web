@@ -279,7 +279,14 @@ async function issueAccount(db: D1Database, type: string) {
   const item = await db.prepare("SELECT * FROM account_pool WHERE type = ? AND status = 'available' ORDER BY id LIMIT 1").bind(type).first<any>();
   if (!item) return { ok: false, message: "Da het tai khoan trong kho." };
   await db.prepare("UPDATE account_pool SET status = 'issued', issued_at = CURRENT_TIMESTAMP WHERE id = ?").bind(item.id).run();
-  const parsed = parseAccount(item.raw, type);
+  const parsed: any = parseAccount(item.raw, type);
+  if (type === "2fa" && parsed.twofaSecret) {
+    const preview = await preview2FA(parsed.twofaSecret);
+    if (preview.ok && preview.code) {
+      parsed.twofaCode = preview.code;
+      parsed.twofaSecondsRemaining = preview.secondsRemaining;
+    }
+  }
   await db
     .prepare("INSERT INTO issued_accounts (type, raw, username, password, email, mail_password, twofa_secret) VALUES (?, ?, ?, ?, ?, ?, ?)")
     .bind(type, item.raw, parsed.username, parsed.password, parsed.email, parsed.mailPassword, parsed.twofaSecret)
