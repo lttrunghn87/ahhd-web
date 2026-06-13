@@ -30,7 +30,9 @@ const DEFAULT_VIDEO_LITE_60 = [
 
 const defaultSettings: Record<string, string> = {
   settings_password_hash: "",
+  settings_password_enabled: "true",
   manager_password_hash: "",
+  management_password_enabled: "false",
   site_password_enabled: "false",
   site_password_hash: "",
   default_password_enabled: "true",
@@ -124,10 +126,10 @@ export const onRequest = async (ctx: Ctx) => {
         return response(await saveSettingsGroup(ctx.env.DB, action, body));
       case "change_settings_password":
         await requireAdmin(ctx.request, ctx.env, session);
-        return response(await changePassword(ctx.env.DB, body, "settings_password_hash", "Mat khau Settings"));
+        return response(await saveSettingsPasswordSettings(ctx.env.DB, body));
       case "save_management_password":
         await requireAdmin(ctx.request, ctx.env, session);
-        return response(await changePassword(ctx.env.DB, body, "manager_password_hash", "Mat khau Quan ly"));
+        return response(await saveManagementPasswordSettings(ctx.env.DB, body));
       case "save_employees":
         await requireManager(ctx.request, ctx.env, session);
         return response(await saveEmployees(ctx.env.DB, body.employees || []));
@@ -147,6 +149,15 @@ export const onRequest = async (ctx: Ctx) => {
       case "delete_link_file":
         await requireManager(ctx.request, ctx.env, session);
         return response(await deleteLinksByDate(ctx.env.DB, String(body.date || "")));
+      case "get_normal_account_stats":
+        await requireManager(ctx.request, ctx.env, session);
+        return response(await getNormalAccountStats(ctx.env.DB));
+      case "view_normal_accounts_by_date":
+        await requireManager(ctx.request, ctx.env, session);
+        return response(await viewNormalAccountsByDate(ctx.env.DB, String(body.date || "")));
+      case "delete_normal_accounts_by_date":
+        await requireManager(ctx.request, ctx.env, session);
+        return response(await deleteNormalAccountsByDate(ctx.env.DB, String(body.date || "")));
       case "get_2fa_list":
         await requireManager(ctx.request, ctx.env, session);
         return response(await get2FAStats(ctx.env.DB));
@@ -196,18 +207,23 @@ async function ensureSchema(db: D1Database) {
     }
     await db.batch(statements);
   }
+  const missingDefaults = Object.entries(defaultSettings).map(([key, value]) =>
+    db.prepare("INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)").bind(key, value)
+  );
+  await db.batch(missingDefaults);
 
   schemaReady = true;
 }
 
 async function getInitialData(db: D1Database, session: Record<string, boolean>) {
+  const settingsUnlocked = (await getSetting(db, "settings_password_enabled")) !== "true" || !!session.admin;
   const siteLocked = (await getSetting(db, "site_password_enabled")) === "true" && !session.site && !session.admin;
   if (siteLocked) {
     return {
       ok: true,
       requiresAuth: true,
-      isSettingsUnlocked: !!session.admin,
-      isManagerUnlocked: !!session.manager,
+      isSettingsUnlocked: settingsUnlocked,
+      isManagerUnlocked: (await getSetting(db, "management_password_enabled")) !== "true" || !!session.manager,
       settings: {},
       employees: [],
       stats: { remainingMail: 0, remainingNormal: 0, remaining2FA: 0, usedToday: 0, totalUsed: 0 }
@@ -225,8 +241,8 @@ async function getInitialData(db: D1Database, session: Record<string, boolean>) 
   return {
     ok: true,
     requiresAuth: false,
-    isSettingsUnlocked: !!session.admin,
-    isManagerUnlocked: !!session.manager,
+    isSettingsUnlocked: settingsUnlocked,
+    isManagerUnlocked: (await getSetting(db, "management_password_enabled")) !== "true" || !!session.manager,
     settings,
     employees,
     stats: { remainingMail, remainingNormal, remaining2FA, usedToday, totalUsed }
@@ -366,6 +382,31 @@ async function changePassword(db: D1Database, body: any, settingKey: string, lab
   return { ok: true, message: `Da doi ${label}.` };
 }
 
+async function saveSettingsPasswordSettings(db: D1Database, body: any) {
+  await setSetting(db, "settings_password_enabled", normalizeSettingValue(body.settings_password_enabled));
+  const next = String(body.new_password || "");
+  if (!next) return { ok: true, message: "Da luu cai dat mat khau Settings." };
+  if (next.length < 6) return { ok: false, message: "Mat khau moi phai it nhat 6 ky tu." };
+  if (next !== String(body.confirm_password || "")) return { ok: false, message: "Xac nhan mat khau moi khong khop." };
+  const current = String(body.current_password || "");
+  const hash = await getSetting(db, "settings_password_hash");
+  if (hash !== await sha256(current)) return { ok: false, message: "Mat khau cu khong dung." };
+  await setSetting(db, "settings_password_hash", await sha256(next));
+  return { ok: true, message: "Da luu mat khau Settings." };
+}
+
+async function saveManagementPasswordSettings(db: D1Database, body: any) {
+  await setSetting(db, "management_password_enabled", normalizeSettingValue(body.management_password_enabled));
+  const next = String(body.new_password || "");
+  if (!next) return { ok: true, message: "Da luu cai dat mat khau Quan ly." };
+  if (next.length < 4) return { ok: false, message: "Mat khau moi phai it nhat 4 ky tu." };
+  const current = String(body.current_password || "");
+  const hash = await getSetting(db, "manager_password_hash");
+  if (hash !== await sha256(current)) return { ok: false, message: "Mat khau cu khong dung." };
+  await setSetting(db, "manager_password_hash", await sha256(next));
+  return { ok: true, message: "Da luu mat khau Quan ly." };
+}
+
 async function saveEmployees(db: D1Database, employees: string[]) {
   const clean = [...new Set((employees || []).map((name) => String(name).trim()).filter(Boolean))];
   await db.prepare("DELETE FROM employees").run();
@@ -399,6 +440,25 @@ async function viewLinks(db: D1Database, date: string) {
 async function deleteLinksByDate(db: D1Database, date: string) {
   await db.prepare("DELETE FROM submitted_links WHERE date(created_at) = date(?)").bind(date).run();
   return { ok: true, message: "Da xoa link theo ngay." };
+}
+
+async function getNormalAccountStats(db: D1Database) {
+  return {
+    ok: true,
+    stats: (await db.prepare("SELECT date(issued_at) AS date, COUNT(*) AS count FROM issued_accounts WHERE type = 'normal' GROUP BY date(issued_at) ORDER BY date DESC").all()).results || []
+  };
+}
+
+async function viewNormalAccountsByDate(db: D1Database, date: string) {
+  return {
+    ok: true,
+    accounts: (await db.prepare("SELECT id, type, raw, username, password, email, mail_password, issued_at FROM issued_accounts WHERE type = 'normal' AND date(issued_at) = date(?) ORDER BY id").bind(date).all()).results || []
+  };
+}
+
+async function deleteNormalAccountsByDate(db: D1Database, date: string) {
+  await db.prepare("DELETE FROM issued_accounts WHERE type = 'normal' AND date(issued_at) = date(?)").bind(date).run();
+  return { ok: true, message: "Da xoa TK Thuong theo ngay." };
 }
 
 async function get2FAStats(db: D1Database) {
@@ -441,11 +501,13 @@ async function loginSite(ctx: Ctx, body: any) {
 }
 
 async function requireAdmin(request: Request, env: Env, session: Record<string, boolean>) {
+  if ((await getSetting(env.DB, "settings_password_enabled")) !== "true") return;
   if (session.admin || (await verifyCookie(request, env, "admin_session", "admin"))) return;
   throw new Error("Unauthorized");
 }
 
 async function requireManager(request: Request, env: Env, session: Record<string, boolean>) {
+  if ((await getSetting(env.DB, "management_password_enabled")) !== "true") return;
   if (session.manager || (await verifyCookie(request, env, "manager_session", "manager"))) return;
   throw new Error("Unauthorized");
 }

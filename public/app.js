@@ -315,11 +315,13 @@ function renderSettings() {
       <section class="settings-card quick-settings-card">
         <div class="settings-card-title">${settingsIcon("bolt")}<span>Thao tác nhanh</span></div>
         <div class="quick-actions settings-quick-grid">
+          ${quickActionButton("videos", "settings", "video", "Thêm Video")}
           ${quickActionButton("employees", "manager", "users", "Quản lý NV")}
           ${quickActionButton("links", "manager", "list", "Quản lý Link")}
+          ${quickActionButton("normal", "manager", "user-check", "Quản lý TK Thường")}
           ${quickActionButton("twofa", "manager", "shield", "Quản lý 2FA")}
-          ${quickActionButton("videos", "settings", "video", "Thêm Video")}
-          ${quickActionButton("accounts", "settings", "user-plus", "Thêm TK Thường")}
+          ${quickActionButton("mailAccounts", "settings", "mail", "Thêm Email reg")}
+          ${quickActionButton("normalAccounts", "settings", "user-plus", "Thêm TK Thường")}
           ${quickActionButton("twofaAccounts", "settings", "shield", "Thêm TK 2FA")}
         </div>
       </section>
@@ -358,6 +360,7 @@ function settingsIcon(name) {
     shield: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 4 5v6c0 5 3.4 9.7 8 11 4.6-1.3 8-6 8-11V5l-8-3Zm0 4 5 1.9V11c0 3.5-2 6.6-5 7.8A8.6 8.6 0 0 1 7 11V7.9L12 6Z"/></svg>`,
     video: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h11a2 2 0 0 1 2 2v1.5L21 7v10l-4-2.5V16a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2Z"/></svg>`,
     "user-plus": `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10Zm0 2a7 7 0 0 0-7 7h10.5A6.5 6.5 0 0 1 15 16a7 7 0 0 0-6-2Zm10 1v3h3v2h-3v3h-2v-3h-3v-2h3v-3h2Z"/></svg>`,
+    "user-check": `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10Zm0 2a7 7 0 0 0-7 7h11.4a7.6 7.6 0 0 1-.4-2.5c0-1.3.3-2.5.9-3.5A7 7 0 0 0 9 14Zm12.7 1.7-1.4-1.4-4.3 4.3-1.8-1.8-1.4 1.4 3.2 3.2 5.7-5.7Z"/></svg>`,
     api: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 7 3 12l5 5 1.4-1.4L5.8 12l3.6-3.6L8 7Zm8 0-1.4 1.4 3.6 3.6-3.6 3.6L16 17l5-5-5-5Zm-4.1 12 2.2-14h-2L9.9 19h2Z"/></svg>`,
     apple: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16.4 13c0-2 1.4-3 1.5-3.1-1-1.4-2.4-1.6-2.9-1.6-1.2-.1-2.4.7-3 0-.6-.7-1.6-.7-2.5-.7-1.3 0-2.6.8-3.3 2-1.4 2.4-.4 6 1 8 .7 1 1.5 2.2 2.6 2.1 1 0 1.4-.7 2.7-.7 1.2 0 1.6.7 2.7.7s1.8-1 2.5-2c.8-1.2 1.1-2.3 1.1-2.4 0 0-2.4-.9-2.4-2.3ZM14.2 7c.5-.7 1-1.6.8-2.5-.8 0-1.8.5-2.4 1.2-.5.6-1 1.6-.8 2.5.9.1 1.8-.5 2.4-1.2Z"/></svg>`,
     mail: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5h18v14H3V5Zm2 3.2V17h14V8.2l-7 5.1-7-5.1Zm1.5-1.2 5.5 4 5.5-4h-11Z"/></svg>`,
@@ -371,6 +374,8 @@ function renderSelectedSettingsPanel() {
   if (state.selectedManagerPanel) return renderManagerPanel();
   if (state.selectedSettingsPanel === "videos") return renderVideoSettings();
   if (state.selectedSettingsPanel === "accounts") return renderAccountSettings();
+  if (state.selectedSettingsPanel === "mailAccounts") return renderMailAccountSettings();
+  if (state.selectedSettingsPanel === "normalAccounts") return renderNormalAccountSettings();
   if (state.selectedSettingsPanel === "twofaAccounts") return renderAccountSettings("save-2fa-accounts-form", "twofaAccounts", "Quản lý DS Tài Khoản 2FA", "accounts");
   if (state.selectedSettingsPanel === "display") return renderDisplaySettings();
   return renderGeneralSettings();
@@ -418,17 +423,20 @@ function renderGeneralSettings() {
         <button class="btn-save" type="submit">Lưu cài đặt bảo vệ</button>
       </form>
     `)}
-    ${settingsCard("Đổi mật khẩu trang Cài đặt", "key", `
+    ${settingsCard("Mật khẩu trang Cài đặt", "key", `
       <form id="change-settings-password-form">
-        <p class="muted">Mật khẩu mặc định ban đầu là: Zxcv123</p>
+        ${checkbox("settings_password_enabled", "Bật mật khẩu trang Cài đặt", s.settings_password_enabled)}
+        <p class="muted">Để trống các trường dưới đây nếu chỉ muốn bật/tắt mật khẩu. Mật khẩu mặc định: Zxcv123</p>
         <div class="form-group"><label>Mật khẩu cũ:</label><input type="password" name="current_password" /></div>
         <div class="form-group"><label>Mật khẩu mới (ít nhất 6 ký tự):</label><input type="password" name="new_password" /></div>
+        <div class="form-group"><label>Xác nhận mật khẩu mới:</label><input type="password" name="confirm_password" /></div>
         <button class="btn-save" type="submit">Lưu Thay Đổi</button>
       </form>
     `)}
-    ${settingsCard("Mật khẩu Quản lý (Link, 2FA, NV)", "list", `
+    ${settingsCard("Mật khẩu Quản lý", "list", `
       <form id="save-management-password-form">
-        <p class="muted">Đặt mật khẩu chung để truy cập các mục trong khu vực quản lý.</p>
+        ${checkbox("management_password_enabled", "Bật mật khẩu cho các mục Quản lý", s.management_password_enabled)}
+        <p class="muted">Để trống các trường dưới đây nếu chỉ muốn bật/tắt mật khẩu.</p>
         <div class="form-group"><label>Mật khẩu cũ:</label><input type="password" name="current_password" placeholder="Nhập mật khẩu hiện tại..." /></div>
         <div class="form-group"><label>Mật khẩu mới (ít nhất 4 ký tự):</label><input type="password" name="new_password" placeholder="Nhập mật khẩu mới..." /></div>
         <button class="btn-save" type="submit">Lưu Mật khẩu</button>
@@ -470,6 +478,26 @@ function renderAccountSettings(formId, key, title, fieldName) {
   `);
 }
 
+function renderMailAccountSettings() {
+  return settingsCard("Quản lý DS Mail Đăng ký", "mail", `
+    <form id="save-mail-accounts-form">
+      <p class="muted">Định dạng: email|pass. Mỗi mail một dòng.</p>
+      <div class="form-group"><textarea name="accounts">${escapeHtml(state.settingsData.mailAccounts || "")}</textarea></div>
+      <button class="btn-save" type="submit">Lưu Danh Sách</button>
+    </form>
+  `);
+}
+
+function renderNormalAccountSettings() {
+  return settingsCard("Quản lý DS Tài Khoản Thường (Nguồn cấp)", "user-plus", `
+    <form id="save-normal-accounts-form">
+      <p class="muted">Định dạng: Email|User|Password|Timestamp hoặc user|pass. Mỗi tài khoản một dòng.</p>
+      <div class="form-group"><textarea name="accounts">${escapeHtml(state.settingsData.normalAccounts || "")}</textarea></div>
+      <button class="btn-save" type="submit">Lưu Danh Sách</button>
+    </form>
+  `);
+}
+
 function renderDisplaySettings() {
   const s = state.settingsData.settings;
   return settingsCard("Cài đặt Hiển thị", "display", `
@@ -498,6 +526,7 @@ function renderDisplaySettings() {
 function renderManagerPanel() {
   if (state.selectedManagerPanel === "employees") return settingsCard("Quản lý Nhân viên", "users", `<div id="manager-content">${renderEmployeeManager()}</div>`);
   if (state.selectedManagerPanel === "links") return settingsCard("Quản lý Link Đã Đăng", "list", `<div id="manager-content">${renderStatsManager("link")}</div>`);
+  if (state.selectedManagerPanel === "normal") return settingsCard("Quản lý TK Thường (Đã Đăng Ký)", "user-check", `<div id="manager-content">${renderStatsManager("normal")}</div>`);
   if (state.selectedManagerPanel === "twofa") return settingsCard("Quản lý Dữ liệu 2FA", "shield", `<div id="manager-content">${renderStatsManager("twofa")}</div>`);
   return "";
 }
@@ -516,7 +545,8 @@ function renderEmployeeManager() {
 }
 
 function renderStatsManager(type) {
-  return `<h3>${type === "link" ? "Quản lý Link Đã Đăng" : "Quản lý Dữ liệu 2FA"}</h3><div id="stats-table" class="loading">Đang tải...</div>`;
+  const title = type === "link" ? "Thống kê Link theo ngày" : type === "normal" ? "Thống kê TK Thường theo ngày" : "Thống kê 2FA theo ngày";
+  return `<h3>${title}</h3><div id="stats-table" class="loading">Đang tải...</div>`;
 }
 
 function bindPageEvents() {
@@ -547,6 +577,7 @@ function bindPageEvents() {
   const search = document.getElementById("old-account-search");
   if (search) search.addEventListener("input", debounce(handleSearch, 300));
   if (state.selectedManagerPanel === "links") loadStatsTable("link");
+  if (state.selectedManagerPanel === "normal") loadStatsTable("normal");
   if (state.selectedManagerPanel === "twofa") loadStatsTable("twofa");
 }
 
@@ -561,6 +592,8 @@ async function handleSubmit(event) {
     "save-2fa-client-form": "submit_2fa_info",
     "save-video-links-form": "save_video_links",
     "save-accounts-form": "save_account_list",
+    "save-mail-accounts-form": "save_account_list",
+    "save-normal-accounts-form": "save_normal_account_list",
     "save-2fa-accounts-form": "save_account_2fa_list",
     "save-mail-api-form": "save_mail_api_settings",
     "save-icloud-form": "save_icloud_settings",
@@ -578,6 +611,8 @@ async function handleSubmit(event) {
     if (form.id === "save-accounts-form") {
       await api("save_account_list", { accounts: data.accounts_mail || "" });
       result = await api("save_normal_account_list", { accounts: data.accounts_normal || "" });
+    } else if (form.id === "save-mail-accounts-form" || form.id === "save-normal-accounts-form") {
+      result = await api(action, { accounts: data.accounts || "" });
     } else {
       if (form.id === "save-2fa-accounts-form") data.accounts = data.accounts || "";
       result = await api(action, data);
@@ -686,7 +721,7 @@ function promptManagerPassword() {
 async function loadStatsTable(type) {
   const target = document.getElementById("stats-table");
   if (!target) return;
-  const action = type === "link" ? "get_link_stats" : "get_2fa_list";
+  const action = type === "link" ? "get_link_stats" : type === "normal" ? "get_normal_account_stats" : "get_2fa_list";
   const data = await api(action, {}, "GET");
   const stats = data.stats || [];
   target.innerHTML = `
@@ -702,16 +737,16 @@ async function loadStatsTable(type) {
 }
 
 async function viewStat(type, date) {
-  const action = type === "link" ? "view_links" : "view_2fa_by_date";
+  const action = type === "link" ? "view_links" : type === "normal" ? "view_normal_accounts_by_date" : "view_2fa_by_date";
   const data = await api(action, { date }, "GET");
-  const rows = data.links || data.records || [];
+  const rows = data.links || data.accounts || data.records || [];
   showModal(`Chi tiết ${date}`, `<pre>${escapeHtml(JSON.stringify(rows, null, 2))}</pre>`);
 }
 
 async function downloadStat(type, date, format) {
-  const action = type === "link" ? "view_links" : "view_2fa_by_date";
+  const action = type === "link" ? "view_links" : type === "normal" ? "view_normal_accounts_by_date" : "view_2fa_by_date";
   const data = await api(action, { date }, "GET");
-  const rows = data.links || data.records || [];
+  const rows = data.links || data.accounts || data.records || [];
   const text = format === "csv" ? toCsv(rows) : rows.map((row) => row.link || row.raw || JSON.stringify(row)).join("\n");
   const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
   const a = document.createElement("a");
@@ -723,7 +758,8 @@ async function downloadStat(type, date, format) {
 
 async function deleteStat(type, date) {
   if (!confirm(`Xóa dữ liệu ngày ${date}?`)) return;
-  await api(type === "link" ? "delete_link_file" : "delete_2fa_day_file", { date });
+  const action = type === "link" ? "delete_link_file" : type === "normal" ? "delete_normal_accounts_by_date" : "delete_2fa_day_file";
+  await api(action, { date });
   await loadStatsTable(type);
 }
 
