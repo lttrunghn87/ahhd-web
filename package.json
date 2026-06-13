@@ -1,0 +1,12 @@
+{
+  "name": "ahhd-account-system",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "check": "node scripts/check.mjs",
+    "dev": "npx wrangler pages dev dist --functions functions --d1 DB=ahhd_db",
+    "deploy": "npm run build && npx wrangler pages deploy dist --project-name ahhd"
+  }
+}

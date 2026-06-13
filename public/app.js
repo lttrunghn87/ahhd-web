@@ -1,0 +1,750 @@
+const state = {
+  page: location.pathname.includes("settings") ? "settings" : "home",
+  data: null,
+  settingsData: null,
+  selectedSettingsPanel: "general",
+  selectedManagerPanel: null,
+  currentAccount: null
+};
+
+const app = document.getElementById("app");
+const navbar = document.getElementById("navbar");
+const modalRoot = document.getElementById("modal-root");
+
+init();
+
+async function init() {
+  await loadInitialData();
+  render();
+}
+
+async function loadInitialData() {
+  state.data = await api("get_initial_data", {}, "GET");
+}
+
+async function loadSettingsData() {
+  state.settingsData = await api("get_settings_data", {}, "GET");
+}
+
+async function api(action, data = {}, method = "POST") {
+  const url = new URL("/api", location.origin);
+  url.searchParams.set("action", action);
+  const options = { method, headers: {} };
+  if (method !== "GET") {
+    options.headers["Content-Type"] = "application/json";
+    options.body = JSON.stringify(data);
+  } else {
+    Object.entries(data).forEach(([key, value]) => url.searchParams.set(key, value));
+  }
+  const res = await fetch(url, options);
+  const json = await res.json().catch(() => ({ ok: false, message: "API không trả JSON." }));
+  if (!res.ok || json.ok === false) throw new Error(json.message || "Có lỗi xảy ra.");
+  return json;
+}
+
+function render() {
+  renderNavbar();
+  if (!state.data) {
+    app.innerHTML = `<div class="loading">Đang tải dữ liệu...</div>`;
+    return;
+  }
+  if (state.data.requiresAuth && state.page !== "settings") {
+    renderLogin();
+    bindPageEvents();
+    return;
+  }
+  if (state.page === "settings") {
+    if (!state.data.isSettingsUnlocked) renderSettingsPrompt();
+    else renderSettings();
+  } else {
+    renderHome();
+  }
+  bindPageEvents();
+}
+
+function renderLogin() {
+  app.innerHTML = `
+    <section class="panel" style="max-width: 520px; margin: 30px auto;">
+      <div class="panel-header">Yêu cầu xác thực</div>
+      <div class="panel-body">
+        <p class="muted">Vui lòng nhập mật khẩu để tiếp tục.</p>
+        <form id="login-form">
+          <div class="form-group"><input type="password" name="password" placeholder="Mật khẩu..." required /></div>
+          <button class="btn-primary" type="submit">Đăng nhập</button>
+        </form>
+      </div>
+    </section>
+  `;
+}
+
+function renderNavbar() {
+  navbar.innerHTML = `
+    <div class="navbar">
+      <div class="brand">Hệ Thống Cấp Tài Khoản</div>
+      <div class="nav-actions">
+        <a href="/home" class="nav-link ${state.page === "home" ? "active" : ""}" data-route="home">Trang Chính</a>
+        <a href="/settings" class="nav-link ${state.page === "settings" ? "active" : ""}" data-route="settings">Settings</a>
+        ${state.data?.isSettingsUnlocked ? `<a href="#" class="btn-logout" data-action="logout">Đăng xuất</a>` : ""}
+      </div>
+    </div>
+  `;
+}
+
+function renderHome() {
+  const settings = state.data.settings;
+  const order = (settings.display.display_panel_order || "").split(",").filter(Boolean);
+  const panels = {
+    account_panel: renderAccountPanel,
+    search_old_accounts_panel: renderSearchPanel,
+    video_panel: renderVideoPanel,
+    icloud_panel: renderIcloudPanel,
+    withdrawal_email_panel: renderWithdrawalPanel,
+    link_submission_panel: renderLinkSubmissionPanel
+  };
+  const html = order.map((id) => panels[id]?.(settings)).filter(Boolean).join("");
+  app.innerHTML = `<div class="dashboard-grid">${html || `<section class="panel"><div class="empty">Chưa bật panel nào.</div></section>`}</div>`;
+}
+
+function renderAccountPanel(settings) {
+  if (settings.display.display_account_panel !== "true") return "";
+  const stats = state.data.stats;
+  const output = state.currentAccount
+    ? `<div class="output-box"><strong>Tài khoản vừa cấp:</strong>\n${escapeHtml(state.currentAccount.raw || "")}</div>`
+    : "";
+  const twofaForm = settings.display.display_2fa_form === "true" ? `
+    <form id="save-2fa-client-form" class="form-grid">
+      <div class="form-group"><label>Email</label><input name="email" placeholder="Email..." /></div>
+      <div class="form-group"><label>Tài khoản</label><input name="username" placeholder="Username..." /></div>
+      <div class="form-group"><label>Mật khẩu</label><input name="password" placeholder="Password..." /></div>
+      <div class="form-group"><label>Secret 2FA</label><input name="secret" placeholder="Secret key..." /></div>
+      <div class="form-group full"><button class="btn-save" type="submit">Lưu 2FA</button></div>
+    </form>` : "";
+  return `
+    <section class="panel">
+      <div class="panel-header">Tài Khoản</div>
+      <div class="panel-body">
+        <div class="stats">
+          <div class="stat">Mail ĐK:<strong>${stats.remainingMail}</strong></div>
+          <div class="stat">TK Thường:<strong>${stats.remainingNormal}</strong></div>
+          <div class="stat">2FA:<strong>${stats.remaining2FA}</strong></div>
+          <div class="stat">H.nay:<strong>${stats.usedToday}</strong></div>
+        </div>
+        <p class="muted">Chọn loại tài khoản bạn muốn lấy:</p>
+        <div class="button-row">
+          <button class="btn-primary" data-action="get-account" data-type="mail">Lấy Mail Đăng ký</button>
+          <button class="btn-primary" data-action="get-account" data-type="normal">Lấy Tài khoản Thường</button>
+          <button class="btn-primary" data-action="get-account" data-type="2fa">Lấy Tài khoản 2FA</button>
+          <button data-action="clear-account">Xóa hiển thị</button>
+        </div>
+        ${output}
+        ${twofaForm}
+      </div>
+    </section>
+  `;
+}
+
+function renderSearchPanel(settings) {
+  if (settings.display.display_search_old_accounts_panel !== "true") return "";
+  return `
+    <section class="panel half">
+      <div class="panel-header">Tra Cứu Tài Khoản Cũ</div>
+      <div class="panel-body">
+        <input id="old-account-search" placeholder="Gõ #STT hoặc tên tài khoản để tìm..." />
+        <div id="search-results" class="search-results">Gõ để tìm kiếm...</div>
+      </div>
+    </section>
+  `;
+}
+
+function renderVideoPanel(settings) {
+  if (settings.display.display_video_panel !== "true") return "";
+  return `
+    <section class="panel half">
+      <div class="panel-header">Xem Video</div>
+      <div class="panel-body">
+        <div class="button-row">
+          ${settings.display.display_video_normal_60 === "true" ? `<button data-video-group="normal">Video Thường 60p</button>` : ""}
+          ${settings.display.display_video_lite_60 === "true" ? `<button data-video-group="lite60">Video Lite 60p</button>` : ""}
+          ${settings.display.display_video_lite_180 === "true" ? `<button data-video-group="lite180">Video Lite 180p</button>` : ""}
+        </div>
+      </div>
+    </section>
+  `;
+}
+
+function renderIcloudPanel(settings) {
+  if (settings.display.display_icloud_panel !== "true") return "";
+  return `
+    <section class="panel half">
+      <div class="panel-header">Thông tin iCloud</div>
+      <div class="panel-body">
+        <div class="form-group"><label>Tài khoản:</label><div class="button-row"><input readonly value="${escapeAttr(settings.icloudAccount || "")}" /><button data-copy="${escapeAttr(settings.icloudAccount || "")}">Copy</button></div></div>
+        <div class="form-group"><label>Mật khẩu:</label><div class="button-row"><input readonly value="${escapeAttr(settings.icloudPassword || "")}" /><button data-copy="${escapeAttr(settings.icloudPassword || "")}">Copy</button></div></div>
+      </div>
+    </section>
+  `;
+}
+
+function renderWithdrawalPanel(settings) {
+  if (settings.display.display_withdrawal_email_panel !== "true") return "";
+  const email = randomEmail(settings.withdrawalDomain || "ahhd.pages.dev");
+  return `
+    <section class="panel half">
+      <div class="panel-header">Email Rút tiền nhanh</div>
+      <div class="panel-body">
+        <div class="button-row"><input readonly value="${email}" /><button data-copy="${email}">Copy</button></div>
+      </div>
+    </section>
+  `;
+}
+
+function renderLinkSubmissionPanel(settings) {
+  if (settings.display.display_link_submission_panel !== "true") return "";
+  const requireEmployee = settings.display.display_employee_required === "true";
+  return `
+    <section class="panel">
+      <div class="panel-header">Đăng Link Giftee</div>
+      <div class="panel-body">
+        <form id="submit-links-form">
+          ${requireEmployee ? `<div class="form-group"><label>Nhân viên</label><select name="employee" required><option value="">-- Chọn nhân viên --</option>${state.data.employees.map((name) => `<option>${escapeHtml(name)}</option>`).join("")}</select></div>` : `<input type="hidden" name="employee" value="Không chọn" />`}
+          <div class="form-group"><label>Danh sách link</label><textarea name="links" placeholder="Dán các link của bạn vào đây, mỗi link một dòng..."></textarea></div>
+          <div class="form-actions"><button type="button" data-action="paste-links">Dán</button><button class="btn-save" type="submit">Gửi Link</button><button type="button" data-action="show-link-stats">Thống kê</button></div>
+        </form>
+      </div>
+    </section>
+  `;
+}
+
+function renderSettingsPrompt() {
+  app.innerHTML = `
+    <section class="panel" style="max-width: 520px; margin: 30px auto;">
+      <div class="panel-header">Mở khóa trang Cài đặt</div>
+      <div class="panel-body">
+        <p class="muted">Đây là khu vực riêng tư. Vui lòng nhập mật khẩu để tiếp tục.</p>
+        <form id="unlock-settings-form">
+          <div class="form-group"><input type="password" name="password" placeholder="Mật khẩu..." required /></div>
+          <div class="form-actions"><button class="btn-primary" type="submit">Mở khóa</button><a href="/home" class="nav-link" data-route="home">Quay lại Trang chủ</a></div>
+        </form>
+      </div>
+    </section>
+  `;
+}
+
+function renderSettings() {
+  if (!state.settingsData) {
+    app.innerHTML = `<div class="loading">Đang tải cài đặt...</div>`;
+    loadSettingsData().then(render).catch((error) => showToast(error.message, true));
+    return;
+  }
+  app.innerHTML = `
+    <div class="quick-actions">
+      <button data-manager-panel="employees">Quản lý NV</button>
+      <button data-manager-panel="links">Quản lý Link</button>
+      <button data-manager-panel="twofa">Quản lý 2FA</button>
+      <button data-settings-panel="videos">Thêm Video</button>
+      <button data-settings-panel="accounts">Thêm TK Thường</button>
+      <button data-settings-panel="twofaAccounts">Thêm TK 2FA</button>
+    </div>
+    <div style="height: 14px"></div>
+    <div class="settings-layout">
+      <aside class="settings-menu">
+        ${settingsMenuButton("general", "Cài đặt chung")}
+        ${settingsMenuButton("videos", "Link Video")}
+        ${settingsMenuButton("accounts", "TK Thường")}
+        ${settingsMenuButton("twofaAccounts", "TK 2FA")}
+        ${settingsMenuButton("display", "Hiển thị")}
+      </aside>
+      <section class="panel">
+        <div class="panel-body">${renderSelectedSettingsPanel()}</div>
+      </section>
+    </div>
+  `;
+}
+
+function settingsMenuButton(id, label) {
+  return `<button data-settings-panel="${id}" class="${state.selectedSettingsPanel === id ? "active" : ""}">${label}</button>`;
+}
+
+function renderSelectedSettingsPanel() {
+  if (state.selectedManagerPanel) return renderManagerPanel();
+  if (state.selectedSettingsPanel === "videos") return renderVideoSettings();
+  if (state.selectedSettingsPanel === "accounts") return renderAccountSettings();
+  if (state.selectedSettingsPanel === "twofaAccounts") return renderAccountSettings("save-2fa-accounts-form", "twofaAccounts", "Quản lý DS Tài Khoản 2FA", "accounts");
+  if (state.selectedSettingsPanel === "display") return renderDisplaySettings();
+  return renderGeneralSettings();
+}
+
+function renderGeneralSettings() {
+  const s = state.settingsData.settings;
+  return `
+    <form id="save-mail-api-form" class="panel-section">
+      <h3>Cài đặt Phương thức API (Get Code)</h3>
+      <div class="button-row">
+        ${radio("mail_api_method", "oauth2", "OAuth2", s.mail_api_method)}
+        ${radio("mail_api_method", "graph_api", "Graph API", s.mail_api_method)}
+        ${radio("mail_api_method", "unlimitmail", "UnlimitMail", s.mail_api_method)}
+      </div>
+      <div class="form-group"><label>API Token</label><input name="mail_api_token" value="${escapeAttr(s.mail_api_token || "")}" /></div>
+      <button class="btn-save" type="submit">Lưu Cài đặt API</button>
+    </form>
+    <hr />
+    <form id="save-icloud-form" class="form-grid">
+      <h3 class="form-group full">Cài đặt iCloud</h3>
+      <div class="form-group"><label>Tài Khoản iCloud</label><input name="icloud_account" value="${escapeAttr(s.icloud_account || "")}" /></div>
+      <div class="form-group"><label>Mật khẩu iCloud</label><input name="icloud_password" value="${escapeAttr(s.icloud_password || "")}" /></div>
+      <div class="form-group full"><button class="btn-save" type="submit">Lưu thông tin iCloud</button></div>
+    </form>
+    <hr />
+    <form id="save-withdrawal-email-form">
+      <h3>Cài đặt Email Rút Tiền Nhanh</h3>
+      <p class="muted">Email sẽ được tạo ngẫu nhiên theo dạng: [7-10 ký tự]@[Tên miền]</p>
+      <div class="form-group"><label>Tên miền</label><input name="withdrawal_domain" value="${escapeAttr(s.withdrawal_domain || "")}" /></div>
+      <button class="btn-save" type="submit">Lưu Cài đặt Email</button>
+    </form>
+    <hr />
+    <form id="save-default-password-form">
+      <h3>Cài đặt Mật khẩu Mặc định</h3>
+      ${checkbox("default_password_enabled", "Bật mật khẩu mặc định", s.default_password_enabled)}
+      <div class="form-group"><label>Mật khẩu mặc định</label><input name="default_password" value="${escapeAttr(s.default_password || "")}" /></div>
+      <button class="btn-save" type="submit">Lưu Mật khẩu Mặc định</button>
+    </form>
+    <hr />
+    <form id="save-site-password-form">
+      <h3>Bảo vệ bằng mật khẩu</h3>
+      ${checkbox("site_password_enabled", "Bật bảo vệ bằng mật khẩu", s.site_password_enabled)}
+      <div class="form-group"><label>Mật khẩu mới</label><input type="password" name="site_password" placeholder="Để trống nếu không đổi" /></div>
+      <button class="btn-save" type="submit">Lưu cài đặt bảo vệ</button>
+    </form>
+    <hr />
+    <form id="change-settings-password-form" class="form-grid">
+      <h3 class="form-group full">Đổi mật khẩu trang Cài đặt</h3>
+      <div class="form-group"><label>Mật khẩu cũ</label><input type="password" name="current_password" /></div>
+      <div class="form-group"><label>Mật khẩu mới</label><input type="password" name="new_password" /></div>
+      <div class="form-group full"><button class="btn-save" type="submit">Lưu Thay Đổi</button></div>
+    </form>
+    <hr />
+    <form id="save-management-password-form" class="form-grid">
+      <h3 class="form-group full">Mật khẩu Quản lý (Link, 2FA, NV)</h3>
+      <div class="form-group"><label>Mật khẩu cũ</label><input type="password" name="current_password" /></div>
+      <div class="form-group"><label>Mật khẩu mới</label><input type="password" name="new_password" /></div>
+      <div class="form-group full"><button class="btn-save" type="submit">Lưu Mật khẩu</button></div>
+    </form>
+  `;
+}
+
+function renderVideoSettings() {
+  const s = state.settingsData.settings;
+  return `
+    <form id="save-video-links-form">
+      <h3>Quản lý Link Video TikTok</h3>
+      <p class="muted">Nhập danh sách link video TikTok, mỗi link trên một dòng.</p>
+      <div class="form-group"><label>Link TikTok thường (60 phút)</label><textarea name="video_normal_60">${escapeHtml(s.video_normal_60 || "")}</textarea></div>
+      <div class="form-group"><label>Link TikTok Lite (60 phút)</label><textarea name="video_lite_60">${escapeHtml(s.video_lite_60 || "")}</textarea></div>
+      <div class="form-group"><label>Link TikTok Lite (180 phút)</label><textarea name="video_lite_180">${escapeHtml(s.video_lite_180 || "")}</textarea></div>
+      <button class="btn-save" type="submit">Lưu Danh sách Link Video</button>
+    </form>
+  `;
+}
+
+function renderAccountSettings(formId, key, title, fieldName) {
+  if (!formId) {
+    return `
+      <form id="save-accounts-form">
+        <h3>Quản lý DS Tài Khoản Thường / Mail ĐK</h3>
+        <p class="muted">Mỗi tài khoản một dòng. Mail ĐK dùng cho nút Lấy Mail Đăng ký, TK Thường dùng cho nút Lấy Tài khoản Thường.</p>
+        <div class="form-group"><label>Danh sách Mail ĐK</label><textarea name="accounts_mail">${escapeHtml(state.settingsData.mailAccounts || "")}</textarea></div>
+        <div class="form-group"><label>Danh sách TK Thường</label><textarea name="accounts_normal">${escapeHtml(state.settingsData.normalAccounts || "")}</textarea></div>
+        <button class="btn-save" type="submit">Lưu Danh Sách</button>
+      </form>
+    `;
+  }
+  return `
+    <form id="${formId}">
+      <h3>${title}</h3>
+      <p class="muted">Mỗi tài khoản một dòng. Hỗ trợ định dạng user|pass, email|pass, hoặc Email|User2FA|Password|2FA_SecretKey|Timestamp.</p>
+      <div class="form-group"><textarea name="${fieldName}">${escapeHtml(state.settingsData[key] || "")}</textarea></div>
+      <button class="btn-save" type="submit">Lưu Danh Sách</button>
+    </form>
+  `;
+}
+
+function renderDisplaySettings() {
+  const s = state.settingsData.settings;
+  return `
+    <form id="save-display-form">
+      <h3>Cài đặt Hiển thị</h3>
+      <div class="check-list">
+        ${checkbox("display_account_panel", "Panel Tài Khoản Chính", s.display_account_panel)}
+        ${checkbox("display_video_panel", "Panel Xem Video", s.display_video_panel)}
+        ${checkbox("display_video_normal_60", "Nút Video TikTok Thường 60p", s.display_video_normal_60)}
+        ${checkbox("display_video_lite_60", "Nút Video TikTok Lite 60p", s.display_video_lite_60)}
+        ${checkbox("display_video_lite_180", "Nút Video TikTok Lite 180p", s.display_video_lite_180)}
+        ${checkbox("display_icloud_panel", "Panel Thông tin iCloud", s.display_icloud_panel)}
+        ${checkbox("display_withdrawal_email_panel", "Panel Email Rút tiền nhanh", s.display_withdrawal_email_panel)}
+        ${checkbox("display_link_submission_panel", "Panel Đăng Link", s.display_link_submission_panel)}
+        ${checkbox("display_employee_required", "Yêu cầu chọn Tên Nhân viên", s.display_employee_required)}
+        ${checkbox("display_search_old_accounts_panel", "Panel Tra Cứu TK Cũ", s.display_search_old_accounts_panel)}
+        ${checkbox("display_2fa_form", "Hiển thị Form 2FA", s.display_2fa_form)}
+      </div>
+      <div class="form-group"><label>Thứ tự panel</label><input name="display_panel_order" value="${escapeAttr(s.display_panel_order || "")}" /></div>
+      <button class="btn-save" type="submit">Lưu Cài đặt Hiển thị</button>
+    </form>
+  `;
+}
+
+function renderManagerPanel() {
+  if (state.selectedManagerPanel === "employees") return `<div id="manager-content">${renderEmployeeManager()}</div>`;
+  if (state.selectedManagerPanel === "links") return `<div id="manager-content">${renderStatsManager("link")}</div>`;
+  if (state.selectedManagerPanel === "twofa") return `<div id="manager-content">${renderStatsManager("twofa")}</div>`;
+  return "";
+}
+
+function renderEmployeeManager() {
+  const rows = (state.managerData?.employees || state.settingsData.employees || []).map((name, index) => `
+    <tr><td><input data-employee-index="${index}" value="${escapeAttr(name)}" /></td><td><button class="btn-danger btn-small" data-remove-employee="${index}">Xóa</button></td></tr>
+  `).join("");
+  return `
+    <h3>Quản lý Nhân viên</h3>
+    <div class="form-actions"><button data-manager-tab="employees">Danh sách Nhân viên</button><button data-action="load-employee-stats">Thống kê chi tiết</button></div>
+    <div class="table-wrap"><table><tbody id="employee-list">${rows || `<tr><td>Chưa có nhân viên.</td></tr>`}</tbody></table></div>
+    <div class="form-actions"><input id="new-employee-name" placeholder="Nhập tên nhân viên mới..." /><button data-action="add-employee">Thêm</button><button class="btn-save" data-action="save-employees">Lưu Thay Đổi</button></div>
+    <div id="employee-stats"></div>
+  `;
+}
+
+function renderStatsManager(type) {
+  return `<h3>${type === "link" ? "Quản lý Link Đã Đăng" : "Quản lý Dữ liệu 2FA"}</h3><div id="stats-table" class="loading">Đang tải...</div>`;
+}
+
+function bindPageEvents() {
+  document.querySelectorAll("[data-route]").forEach((link) => {
+    link.addEventListener("click", (event) => {
+      event.preventDefault();
+      state.page = link.dataset.route;
+      history.pushState({}, "", state.page === "settings" ? "/settings" : "/home");
+      render();
+    });
+  });
+
+  document.querySelectorAll("form").forEach((form) => form.addEventListener("submit", handleSubmit));
+  document.querySelectorAll("[data-action]").forEach((el) => el.addEventListener("click", handleAction));
+  document.querySelectorAll("[data-remove-employee]").forEach((el) => el.addEventListener("click", () => {
+    el.closest("tr")?.remove();
+  }));
+  document.querySelectorAll("[data-copy]").forEach((el) => el.addEventListener("click", () => copyText(el.dataset.copy || "")));
+  document.querySelectorAll("[data-video-group]").forEach((el) => el.addEventListener("click", () => openVideoGroup(el.dataset.videoGroup)));
+  document.querySelectorAll("[data-settings-panel]").forEach((el) => el.addEventListener("click", () => {
+    state.selectedManagerPanel = null;
+    state.selectedSettingsPanel = el.dataset.settingsPanel;
+    render();
+  }));
+  document.querySelectorAll("[data-manager-panel]").forEach((el) => el.addEventListener("click", async () => {
+    await openManager(el.dataset.managerPanel);
+  }));
+  const search = document.getElementById("old-account-search");
+  if (search) search.addEventListener("input", debounce(handleSearch, 300));
+  if (state.selectedManagerPanel === "links") loadStatsTable("link");
+  if (state.selectedManagerPanel === "twofa") loadStatsTable("twofa");
+}
+
+async function handleSubmit(event) {
+  event.preventDefault();
+  const form = event.target;
+  const data = formToJson(form);
+  const map = {
+    "unlock-settings-form": "unlock_settings",
+    "login-form": "login",
+    "submit-links-form": "submit_user_links",
+    "save-2fa-client-form": "submit_2fa_info",
+    "save-video-links-form": "save_video_links",
+    "save-accounts-form": "save_account_list",
+    "save-2fa-accounts-form": "save_account_2fa_list",
+    "save-mail-api-form": "save_mail_api_settings",
+    "save-icloud-form": "save_icloud_settings",
+    "save-withdrawal-email-form": "save_withdrawal_email_settings",
+    "save-default-password-form": "save_default_password_settings",
+    "save-site-password-form": "save_site_password_settings",
+    "save-display-form": "save_display_settings",
+    "change-settings-password-form": "change_settings_password",
+    "save-management-password-form": "save_management_password"
+  };
+  try {
+    const action = map[form.id];
+    if (!action) return;
+    let result;
+    if (form.id === "save-accounts-form") {
+      await api("save_account_list", { accounts: data.accounts_mail || "" });
+      result = await api("save_normal_account_list", { accounts: data.accounts_normal || "" });
+    } else {
+      if (form.id === "save-2fa-accounts-form") data.accounts = data.accounts || "";
+      result = await api(action, data);
+    }
+    showToast(result.message || "Đã lưu.");
+    await loadInitialData();
+    if (state.data.isSettingsUnlocked) await loadSettingsData();
+    render();
+  } catch (error) {
+    showToast(error.message, true);
+  }
+}
+
+async function handleAction(event) {
+  const action = event.currentTarget.dataset.action;
+  try {
+    if (action === "logout") {
+      await api("logout");
+      state.data = null;
+      state.settingsData = null;
+      await loadInitialData();
+      render();
+    }
+    if (action === "get-account") {
+      const type = event.currentTarget.dataset.type;
+      const endpoint = type === "normal" ? "get_normal_account_client" : type === "2fa" ? "get_2fa_account_client" : "get_account_client";
+      const result = await api(endpoint);
+      if (!result.ok) throw new Error(result.message);
+      state.currentAccount = result;
+      await loadInitialData();
+      render();
+      showToast(result.message);
+    }
+    if (action === "clear-account") {
+      state.currentAccount = null;
+      render();
+    }
+    if (action === "paste-links") {
+      const text = await navigator.clipboard.readText();
+      const textarea = document.querySelector("#submit-links-form textarea");
+      if (textarea) textarea.value = text;
+    }
+    if (action === "show-link-stats") {
+      await showLinkStatsModal();
+    }
+    if (action === "add-employee") addEmployeeRow();
+    if (action === "save-employees") await saveEmployeeRows();
+    if (action === "load-employee-stats") await loadEmployeeStats();
+  } catch (error) {
+    showToast(error.message, true);
+  }
+}
+
+async function openManager(panel) {
+  try {
+    if (!state.data.isManagerUnlocked) await promptManagerPassword();
+    state.selectedManagerPanel = panel;
+    state.selectedSettingsPanel = "general";
+    if (panel === "employees") state.managerData = await api("get_employee_manager_data", {}, "GET");
+    render();
+  } catch (error) {
+    showToast(error.message, true);
+  }
+}
+
+function promptManagerPassword() {
+  return new Promise((resolve, reject) => {
+    modalRoot.innerHTML = `
+      <div class="modal-backdrop">
+        <div class="modal">
+          <div class="modal-header">Xác thực Quyền Quản lý <button data-close-modal>×</button></div>
+          <div class="modal-body">
+            <p>Vui lòng nhập mật khẩu chung để tiếp tục.</p>
+            <form id="manager-unlock-form"><div class="form-group"><input type="password" name="password" placeholder="Mật khẩu..." /></div><button class="btn-primary" type="submit">Mở khóa</button></form>
+          </div>
+        </div>
+      </div>`;
+    document.querySelector("[data-close-modal]").onclick = () => {
+      closeModal();
+      reject(new Error("Đã hủy."));
+    };
+    document.getElementById("manager-unlock-form").onsubmit = async (event) => {
+      event.preventDefault();
+      try {
+        await api("unlock_manager", formToJson(event.target));
+        await loadInitialData();
+        closeModal();
+        resolve();
+      } catch (error) {
+        reject(error);
+      }
+    };
+  });
+}
+
+async function loadStatsTable(type) {
+  const target = document.getElementById("stats-table");
+  if (!target) return;
+  const action = type === "link" ? "get_link_stats" : "get_2fa_list";
+  const data = await api(action, {}, "GET");
+  const stats = data.stats || [];
+  target.innerHTML = `
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Ngày</th><th>Số lượng</th><th>Hành động</th></tr></thead>
+        <tbody>${stats.map((row) => `<tr><td>${row.date}</td><td>${row.count}</td><td><button class="btn-small" data-view-stat="${type}" data-date="${row.date}">Xem</button> <button class="btn-small" data-download-stat="${type}" data-date="${row.date}" data-format="txt">TXT</button> <button class="btn-small" data-download-stat="${type}" data-date="${row.date}" data-format="csv">CSV</button> <button class="btn-danger btn-small" data-delete-stat="${type}" data-date="${row.date}">Xóa</button></td></tr>`).join("") || `<tr><td colspan="3">Chưa có dữ liệu.</td></tr>`}</tbody>
+      </table>
+    </div>`;
+  target.querySelectorAll("[data-view-stat]").forEach((btn) => btn.addEventListener("click", () => viewStat(type, btn.dataset.date)));
+  target.querySelectorAll("[data-download-stat]").forEach((btn) => btn.addEventListener("click", () => downloadStat(type, btn.dataset.date, btn.dataset.format)));
+  target.querySelectorAll("[data-delete-stat]").forEach((btn) => btn.addEventListener("click", () => deleteStat(type, btn.dataset.date)));
+}
+
+async function viewStat(type, date) {
+  const action = type === "link" ? "view_links" : "view_2fa_by_date";
+  const data = await api(action, { date }, "GET");
+  const rows = data.links || data.records || [];
+  showModal(`Chi tiết ${date}`, `<pre>${escapeHtml(JSON.stringify(rows, null, 2))}</pre>`);
+}
+
+async function downloadStat(type, date, format) {
+  const action = type === "link" ? "view_links" : "view_2fa_by_date";
+  const data = await api(action, { date }, "GET");
+  const rows = data.links || data.records || [];
+  const text = format === "csv" ? toCsv(rows) : rows.map((row) => row.link || row.raw || JSON.stringify(row)).join("\n");
+  const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `${type}-${date}.${format}`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+async function deleteStat(type, date) {
+  if (!confirm(`Xóa dữ liệu ngày ${date}?`)) return;
+  await api(type === "link" ? "delete_link_file" : "delete_2fa_day_file", { date });
+  await loadStatsTable(type);
+}
+
+async function loadEmployeeStats() {
+  const data = await api("get_employee_manager_data", {}, "GET");
+  const target = document.getElementById("employee-stats");
+  target.innerHTML = `
+    <h4>Thống kê chi tiết</h4>
+    <table><thead><tr><th>Ngày</th><th>Số link</th><th></th></tr></thead><tbody>
+      ${(data.stats || []).map((row) => `<tr><td>${row.date}</td><td>${row.count}</td><td><button class="btn-small" data-employee-day="${row.date}">Xem</button></td></tr>`).join("") || `<tr><td colspan="3">Chưa có dữ liệu.</td></tr>`}
+    </tbody></table>`;
+  target.querySelectorAll("[data-employee-day]").forEach((btn) => btn.addEventListener("click", async () => {
+    const detail = await api("get_daily_employee_stats", { date: btn.dataset.employeeDay }, "GET");
+    showModal(`Thống kê ${btn.dataset.employeeDay}`, `<pre>${escapeHtml(JSON.stringify(detail.breakdown, null, 2))}</pre>`);
+  }));
+}
+
+function addEmployeeRow() {
+  const input = document.getElementById("new-employee-name");
+  const name = input.value.trim();
+  if (!name) return;
+  const tbody = document.getElementById("employee-list");
+  const index = tbody.querySelectorAll("input[data-employee-index]").length;
+  tbody.insertAdjacentHTML("beforeend", `<tr><td><input data-employee-index="${index}" value="${escapeAttr(name)}" /></td><td><button class="btn-danger btn-small" data-remove-employee="${index}">Xóa</button></td></tr>`);
+  input.value = "";
+}
+
+async function saveEmployeeRows() {
+  const employees = [...document.querySelectorAll("input[data-employee-index]")].map((input) => input.value.trim()).filter(Boolean);
+  const result = await api("save_employees", { employees });
+  showToast(result.message);
+  await loadInitialData();
+}
+
+async function handleSearch(event) {
+  const query = event.target.value.trim();
+  const target = document.getElementById("search-results");
+  if (!query) {
+    target.textContent = "Gõ để tìm kiếm...";
+    return;
+  }
+  try {
+    const data = await api("search_old_accounts", { query }, "GET");
+    target.innerHTML = (data.results || []).map((row) => `<div><strong>#${row.id}</strong> ${escapeHtml(row.raw)}</div>`).join("") || "Không tìm thấy.";
+  } catch (error) {
+    target.textContent = error.message;
+  }
+}
+
+function openVideoGroup(group) {
+  const settings = state.data.settings;
+  const links = group === "normal" ? [settings.videoNormal60].filter(Boolean) : group === "lite60" ? settings.videoLite60 : settings.videoLite180;
+  if (links.length === 1) {
+    window.open(links[0], "_blank", "noopener,noreferrer");
+    return;
+  }
+  showModal("Chọn video", `<div class="video-grid">${links.map((link, index) => `<a class="action-button" href="${escapeAttr(link)}" target="_blank" rel="noopener noreferrer">Link ${index + 1}</a>`).join("")}</div>`);
+}
+
+async function showLinkStatsModal() {
+  const data = await api("get_link_stats", {}, "GET");
+  showModal("Thống kê Link", `<table><thead><tr><th>Ngày</th><th>Số lượng</th></tr></thead><tbody>${(data.stats || []).map((row) => `<tr><td>${row.date}</td><td>${row.count}</td></tr>`).join("") || `<tr><td colspan="2">Chưa có dữ liệu.</td></tr>`}</tbody></table>`);
+}
+
+function showModal(title, body) {
+  modalRoot.innerHTML = `<div class="modal-backdrop"><div class="modal"><div class="modal-header">${title}<button data-close-modal>×</button></div><div class="modal-body">${body}</div></div></div>`;
+  document.querySelector("[data-close-modal]").onclick = closeModal;
+  document.querySelector(".modal-backdrop").addEventListener("click", (event) => {
+    if (event.target.classList.contains("modal-backdrop")) closeModal();
+  });
+}
+
+function closeModal() {
+  modalRoot.innerHTML = "";
+}
+
+function formToJson(form) {
+  const data = Object.fromEntries(new FormData(form).entries());
+  form.querySelectorAll("input[type=checkbox]").forEach((input) => {
+    data[input.name] = input.checked ? "true" : "false";
+  });
+  return data;
+}
+
+function checkbox(name, label, value) {
+  return `<label class="check-row"><input type="checkbox" name="${name}" ${value === "true" ? "checked" : ""} /> ${label}</label>`;
+}
+
+function radio(name, value, label, current) {
+  return `<label class="check-row"><input type="radio" name="${name}" value="${value}" ${current === value ? "checked" : ""} /> ${label}</label>`;
+}
+
+function copyText(text) {
+  navigator.clipboard.writeText(text || "");
+  showToast("Đã copy.");
+}
+
+function randomEmail(domain) {
+  const chars = "abcdefghijklmnopqrstuvwxyz0123456789";
+  const len = 7 + Math.floor(Math.random() * 4);
+  let name = "";
+  for (let i = 0; i < len; i += 1) name += chars[Math.floor(Math.random() * chars.length)];
+  return `${name}@${domain}`;
+}
+
+function showToast(message, isError = false) {
+  const root = document.getElementById("toast-root");
+  root.innerHTML = `<div class="toast ${isError ? "error" : ""}">${escapeHtml(message)}</div>`;
+  setTimeout(() => (root.innerHTML = ""), 3500);
+}
+
+function debounce(fn, delay) {
+  let timer;
+  return (...args) => {
+    clearTimeout(timer);
+    timer = setTimeout(() => fn(...args), delay);
+  };
+}
+
+function toCsv(rows) {
+  if (!rows.length) return "";
+  const keys = Object.keys(rows[0]);
+  return [keys.join(","), ...rows.map((row) => keys.map((key) => JSON.stringify(row[key] ?? "")).join(","))].join("\n");
+}
+
+function escapeHtml(value) {
+  return String(value ?? "").replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]);
+}
+
+function escapeAttr(value) {
+  return escapeHtml(value);
+}
+
+window.addEventListener("popstate", () => {
+  state.page = location.pathname.includes("settings") ? "settings" : "home";
+  render();
+});
