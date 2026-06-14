@@ -851,11 +851,19 @@ function openVideoGroup(group) {
   showModal("Chọn video", `<div class="video-grid">${links.map((link, index) => `<a class="action-button" href="${escapeAttr(link)}" target="_blank" rel="noopener noreferrer">Link ${index + 1}</a>`).join("")}</div>`);
 }
 
-function updateLiteVideoProgress() {
+function updateLiteVideoProgress(event) {
   const current = getLiteVideoProgress();
   const nextIndex = current % LITE_VIDEO_SEQUENCE.length;
   const nextNumber = nextIndex + 1;
+  if (event?.currentTarget) event.currentTarget.href = LITE_VIDEO_SEQUENCE[nextIndex];
   saveLiteVideoProgress(nextNumber);
+}
+
+function refreshLiteVideoLink() {
+  const link = document.querySelector("[data-lite-sequence-link]");
+  if (!link) return;
+  const nextIndex = getLiteVideoProgress() % LITE_VIDEO_SEQUENCE.length;
+  link.href = LITE_VIDEO_SEQUENCE[nextIndex];
 }
 
 async function showLinkStatsModal() {
@@ -978,3 +986,6 @@ window.addEventListener("popstate", () => {
   state.page = location.pathname.includes("settings") ? "settings" : "home";
   render();
 });
+
+window.addEventListener("pageshow", refreshLiteVideoLink);
+window.addEventListener("focus", refreshLiteVideoLink);
