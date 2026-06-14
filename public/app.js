@@ -2,24 +2,9 @@ const CURRENT_ACCOUNT_STORAGE_KEY = "ahhd_current_account";
 const LITE_VIDEO_PROGRESS_KEY = "ahhd_lite_video_10_20_progress";
 const LITE_VIDEO_SEQUENCE = [
   "https://lite.tiktok.com/t/ZSuDtQ4N8/",
-  "https://lite.tiktok.com/t/ZSyDJgyPD/",
-  "https://lite.tiktok.com/t/ZSux1Atfy/",
-  "https://lite.tiktok.com/t/ZSmbYWoHk/",
-  "https://lite.tiktok.com/t/ZSuaQKbvV/",
   "https://lite.tiktok.com/t/ZSjm5439S/",
   "https://lite.tiktok.com/t/ZSxeAEEtN/",
-  "https://lite.tiktok.com/t/ZSyFS95VK/",
-  "https://lite.tiktok.com/t/ZSmdeGmCj/",
-  "https://lite.tiktok.com/t/ZSjARxpPT/",
-  "https://lite.tiktok.com/t/ZSrEfkbvo/",
-  "https://lite.tiktok.com/t/ZSMaPg99o/",
-  "https://lite.tiktok.com/t/ZS9E7e1L5/",
-  "https://lite.tiktok.com/t/ZShYALDLA/",
   "https://lite.tiktok.com/t/ZSH1YHVsk/",
-  "https://lite.tiktok.com/t/ZS2qdAuor/",
-  "https://lite.tiktok.com/t/ZSQyFL91C/",
-  "https://lite.tiktok.com/t/ZSHQSqsGq/",
-  "https://lite.tiktok.com/t/ZSa7W2pEN/",
   "https://lite.tiktok.com/t/ZSrJxNmCK/",
   "https://lite.tiktok.com/t/ZSM43sfyA/",
   "https://lite.tiktok.com/t/ZSrJxakog/",
@@ -286,7 +271,7 @@ function renderLiteVideoButton(extraClass = "") {
   const liteProgress = getLiteVideoProgress();
   const nextIndex = liteProgress % LITE_VIDEO_SEQUENCE.length;
   const liteUrl = LITE_VIDEO_SEQUENCE[nextIndex];
-  return `<a href="${escapeAttr(liteUrl)}" rel="noopener noreferrer nofollow" data-lite-sequence-link class="video-sequence-button ${extraClass}">Video Lite 10-20p</a>`;
+  return `<a href="${escapeAttr(liteUrl)}" rel="noopener noreferrer nofollow" data-lite-sequence-link class="video-sequence-button ${extraClass}">Video Lite</a>`;
 }
 
 function renderIcloudPanel(settings) {
