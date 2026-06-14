@@ -71,9 +71,9 @@ a {
 }
 
 .app-shell {
-  width: min(1240px, 100%);
+  width: min(430px, 100%);
   margin: 0 auto;
-  padding: 22px;
+  padding: 10px;
 }
 
 .loading,
@@ -104,19 +104,19 @@ a {
 }
 
 .account-panel {
-  grid-column: span 8;
+  grid-column: span 12;
 }
 
 .video-panel {
-  grid-column: span 4;
+  grid-column: span 12;
 }
 
 .search-panel {
-  grid-column: span 5;
+  grid-column: span 12;
 }
 
 .utility-panel {
-  grid-column: span 3;
+  grid-column: span 12;
 }
 
 .link-panel {
@@ -276,7 +276,7 @@ button,
 
 .account-switch-actions {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: 1fr;
   gap: 8px;
 }
 
@@ -451,7 +451,7 @@ textarea {
 }
 
 .issued-actions.two-col {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: 1fr;
 }
 
 .btn-green,
@@ -771,7 +771,8 @@ th {
 
 .page-head {
   display: flex;
-  align-items: end;
+  align-items: stretch;
+  flex-direction: column;
   justify-content: space-between;
   gap: 18px;
   margin-bottom: 18px;
@@ -856,7 +857,7 @@ th {
 
 .utility-panel .button-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: 1fr;
   align-items: center;
 }
 
