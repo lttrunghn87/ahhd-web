@@ -1,36 +1,37 @@
 const CURRENT_ACCOUNT_STORAGE_KEY = "ahhd_current_account";
 const LITE_VIDEO_PROGRESS_KEY = "ahhd_lite_video_10_20_progress";
+const TIKTOK_LITE_ANDROID_PACKAGE = "com.ss.android.ugc.tiktok.lite";
 const LITE_VIDEO_SEQUENCE = [
-  "https://lite.tiktok.com/t/ZSuDtQ4N8/",
-  "https://lite.tiktok.com/t/ZSyDJgyPD/",
-  "https://lite.tiktok.com/t/ZSux1Atfy/",
-  "https://lite.tiktok.com/t/ZSmbYWoHk/",
-  "https://lite.tiktok.com/t/ZSuaQKbvV/",
-  "https://lite.tiktok.com/t/ZSjm5439S/",
-  "https://lite.tiktok.com/t/ZSxeAEEtN/",
-  "https://lite.tiktok.com/t/ZSyFS95VK/",
-  "https://lite.tiktok.com/t/ZSmdeGmCj/",
-  "https://lite.tiktok.com/t/ZSjARxpPT/",
-  "https://lite.tiktok.com/t/ZSrEfkbvo/",
-  "https://lite.tiktok.com/t/ZSMaPg99o/",
-  "https://lite.tiktok.com/t/ZS9E7e1L5/",
-  "https://lite.tiktok.com/t/ZShYALDLA/",
-  "https://lite.tiktok.com/t/ZSH1YHVsk/",
-  "https://lite.tiktok.com/t/ZS2qdAuor/",
-  "https://lite.tiktok.com/t/ZSQyFL91C/",
-  "https://lite.tiktok.com/t/ZSHQSqsGq/",
-  "https://lite.tiktok.com/t/ZSa7W2pEN/",
-  "https://lite.tiktok.com/t/ZSrJxNmCK/",
-  "https://lite.tiktok.com/t/ZSM43sfyA/",
-  "https://lite.tiktok.com/t/ZSrJxakog/",
-  "https://lite.tiktok.com/t/ZSSqEvkXF/",
-  "https://lite.tiktok.com/t/ZSry3KYu7/",
-  "https://lite.tiktok.com/t/ZSrjqdo5Q/",
-  "https://lite.tiktok.com/t/ZShX3CRbr/",
-  "https://lite.tiktok.com/t/ZShVmu2pc/",
-  "https://lite.tiktok.com/t/ZS6rUywGN/",
-  "https://lite.tiktok.com/t/ZSrGTDx7a/",
-  "https://lite.tiktok.com/t/ZS6rUtJ2s/"
+  { author: "lifewithfaria", id: "7292971023794703662", duration: 600 },
+  { author: "the.heirophant", id: "7404299825476357406", duration: 600 },
+  { author: "softlytimed_", id: "7554766053536992534", duration: 606 },
+  { author: "quizzy_lab_tv", id: "7648926513470967053", duration: 632 },
+  { author: "enrique_edits77", id: "7559700884918144278", duration: 626 },
+  { author: "moviegenerate3d", id: "7639344373297089805", duration: 601 },
+  { author: "mohamedeisa", id: "7309659138538097925", duration: 608 },
+  { author: "ytdarl", id: "7071485906468834565", duration: 600 },
+  { author: "1324qe4", id: "7588564284007828758", duration: 600 },
+  { author: "semechkikaif", id: "7370978424980098321", duration: 609 },
+  { author: "mis_x_69.2nd_acc", id: "7582373169487416596", duration: 615 },
+  { author: "10minutesvids_", id: "7106005650500488474", duration: 600 },
+  { author: "thecharismalabb", id: "7640118777245453590", duration: 624 },
+  { author: "jojoasmr", id: "7187924361679031553", duration: 600 },
+  { author: "felixxx.my.id0", id: "7362151531359096070", duration: 600 },
+  { author: "asmr_lisandra", id: "7629799632813542688", duration: 604 },
+  { author: "jojoasmr", id: "7253627347465784578", duration: 600 },
+  { author: "darkraykid", id: "7015901024904924422", duration: 600 },
+  { author: "maeum_asmr", id: "7636919222689402143", duration: 648 },
+  { author: ".10minvideo", id: "7071932276413631750", duration: 600 },
+  { author: "darkenfr", id: "7389785694027173162", duration: 600 },
+  { author: "quiet.cravings6", id: "7625246071224159521", duration: 617 },
+  { author: "remfan27", id: "7636696680762526996", duration: 609 },
+  { author: "milkaa.xoxo", id: "7648417190852578592", duration: 613 },
+  { author: "mmajack0", id: "7648269290310798614", duration: 600 },
+  { author: "user1362035515308", id: "7453054933370178834", duration: 600 },
+  { author: "xx_saturnn_xx", id: "7620262277819763981", duration: 630 },
+  { author: "itrvb19", id: "7649046049822182689", duration: 617 },
+  { author: "kindheit_seriencl", id: "7404030325468319009", duration: 638 },
+  { author: "secondsensetimers", id: "7510673900909464888", duration: 660 }
 ];
 
 const state = {
@@ -875,7 +876,15 @@ function openSequentialLiteVideo() {
   saveLiteVideoProgress(nextNumber);
   const badge = document.querySelector('[data-video-group="lite60"] .video-progress-badge');
   if (badge) badge.textContent = `${nextNumber}/${LITE_VIDEO_SEQUENCE.length}`;
-  window.location.href = LITE_VIDEO_SEQUENCE[nextIndex];
+  window.location.href = buildTikTokLiteVideoUrl(LITE_VIDEO_SEQUENCE[nextIndex]);
+}
+
+function buildTikTokLiteVideoUrl(video) {
+  const webUrl = `https://www.tiktok.com/@${video.author}/video/${video.id}`;
+  if (/Android/i.test(navigator.userAgent)) {
+    return `intent://aweme/detail/${video.id}#Intent;scheme=snssdk1233;package=${TIKTOK_LITE_ANDROID_PACKAGE};S.browser_fallback_url=${encodeURIComponent(webUrl)};end`;
+  }
+  return webUrl;
 }
 
 async function showLinkStatsModal() {
