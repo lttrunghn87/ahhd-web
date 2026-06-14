@@ -285,11 +285,8 @@ function renderVideoPanel(settings) {
 function renderLiteVideoButton(extraClass = "") {
   const liteProgress = getLiteVideoProgress();
   const nextIndex = liteProgress % LITE_VIDEO_SEQUENCE.length;
-  return `
-    <form class="lite-video-form ${extraClass}" action="${escapeAttr(LITE_VIDEO_SEQUENCE[nextIndex])}" method="get">
-      <button type="submit" data-lite-sequence-button class="video-sequence-button">Video Lite 10-20p</button>
-    </form>
-  `;
+  const liteUrl = LITE_VIDEO_SEQUENCE[nextIndex];
+  return `<a href="${escapeAttr(liteUrl)}" rel="noopener noreferrer nofollow" data-lite-sequence-link class="video-sequence-button ${extraClass}">Video Lite 10-20p</a>`;
 }
 
 function renderIcloudPanel(settings) {
@@ -608,13 +605,13 @@ function bindPageEvents() {
     });
   });
 
-  document.querySelectorAll("form:not(.lite-video-form)").forEach((form) => form.addEventListener("submit", handleSubmit));
+  document.querySelectorAll("form").forEach((form) => form.addEventListener("submit", handleSubmit));
   document.querySelectorAll("[data-action]").forEach((el) => el.addEventListener("click", handleAction));
   document.querySelectorAll("[data-remove-employee]").forEach((el) => el.addEventListener("click", () => {
     el.closest("tr")?.remove();
   }));
   document.querySelectorAll("[data-copy]").forEach((el) => el.addEventListener("click", () => copyText(el.dataset.copy || "")));
-  document.querySelectorAll(".lite-video-form").forEach((el) => el.addEventListener("submit", updateLiteVideoProgress));
+  document.querySelectorAll("[data-lite-sequence-link]").forEach((el) => el.addEventListener("click", updateLiteVideoProgress));
   document.querySelectorAll("[data-video-group]").forEach((el) => el.addEventListener("click", () => openVideoGroup(el.dataset.videoGroup)));
   document.querySelectorAll("[data-settings-panel]").forEach((el) => el.addEventListener("click", () => {
     state.selectedManagerPanel = null;
