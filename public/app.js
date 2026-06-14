@@ -148,16 +148,20 @@ function renderHome() {
     link_submission_panel: renderLinkSubmissionPanel
   };
   const html = order.map((id) => panels[id]?.(settings)).filter(Boolean).join("");
+  const showQuickLiteVideo = settings.display.display_video_panel === "true" && settings.display.display_video_lite_60 === "true";
   app.innerHTML = `
     <div class="page-head">
       <div>
         <p class="page-eyebrow">Bảng điều khiển</p>
         <h1>Hệ thống cấp tài khoản</h1>
       </div>
-      <div class="head-meta">
-        <span>Mail: ${state.data.stats.remainingMail}</span>
-        <span>TK thường: ${state.data.stats.remainingNormal}</span>
-        <span>2FA: ${state.data.stats.remaining2FA}</span>
+      <div class="head-actions">
+        <div class="head-meta">
+          <span>Mail: ${state.data.stats.remainingMail}</span>
+          <span>TK thường: ${state.data.stats.remainingNormal}</span>
+          <span>2FA: ${state.data.stats.remaining2FA}</span>
+        </div>
+        ${showQuickLiteVideo ? renderLiteVideoButton("head-video-button") : ""}
       </div>
     </div>
     <div class="dashboard-grid">${html || `<section class="panel"><div class="empty">Chưa bật panel nào.</div></section>`}</div>
@@ -265,20 +269,23 @@ function renderSearchPanel(settings) {
 
 function renderVideoPanel(settings) {
   if (settings.display.display_video_panel !== "true") return "";
-  const liteProgress = getLiteVideoProgress();
-  const liteBadge = liteProgress ? `<span class="video-progress-badge">${liteProgress}/${LITE_VIDEO_SEQUENCE.length}</span>` : "";
   return `
     <section class="panel video-panel">
       <div class="panel-header"><span>Xem Video</span><small>Mở nhóm video nhanh</small></div>
       <div class="panel-body">
         <div class="button-row">
           ${settings.display.display_video_normal_60 === "true" ? `<button data-video-group="normal">Video Thường 60p</button>` : ""}
-          ${settings.display.display_video_lite_60 === "true" ? `<button data-video-group="lite60" class="video-sequence-button"><span>Video Lite 10-20p</span>${liteBadge}</button>` : ""}
           ${settings.display.display_video_lite_180 === "true" ? `<button data-video-group="lite180">Video Lite 180p</button>` : ""}
         </div>
       </div>
     </section>
   `;
+}
+
+function renderLiteVideoButton(extraClass = "") {
+  const liteProgress = getLiteVideoProgress();
+  const liteBadge = liteProgress ? `<span class="video-progress-badge">${liteProgress}/${LITE_VIDEO_SEQUENCE.length}</span>` : "";
+  return `<button type="button" data-video-group="lite60" class="video-sequence-button ${extraClass}"><span>Video Lite 10-20p</span>${liteBadge}</button>`;
 }
 
 function renderIcloudPanel(settings) {

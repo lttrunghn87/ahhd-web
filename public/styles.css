@@ -796,7 +796,14 @@ th {
 .head-meta {
   display: flex;
   flex-wrap: wrap;
-  justify-content: flex-end;
+  justify-content: flex-start;
+  gap: 8px;
+}
+
+.head-actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 120px;
+  align-items: center;
   gap: 8px;
 }
 
@@ -840,6 +847,24 @@ th {
   color: #ffffff;
   font-size: 12px;
   font-weight: 800;
+}
+
+.head-video-button {
+  width: 120px;
+  min-height: 58px;
+  padding: 7px 8px;
+  border-color: var(--primary);
+  background: #ffffff;
+  color: var(--text);
+  font-size: 12px;
+  line-height: 1.15;
+  text-align: left;
+}
+
+.head-video-button .video-progress-badge {
+  min-width: 38px;
+  padding: 3px 6px;
+  font-size: 11px;
 }
 
 .link-panel textarea {
@@ -907,6 +932,10 @@ th {
 
   .head-meta {
     justify-content: flex-start;
+  }
+
+  .head-actions {
+    grid-template-columns: minmax(0, 1fr) 120px;
   }
 
   .utility-panel .button-row {
@@ -1002,8 +1031,19 @@ th {
     gap: 6px;
   }
 
+  .head-actions {
+    grid-template-columns: minmax(0, 1fr) 118px;
+    gap: 6px;
+  }
+
   .head-meta span {
     padding: 5px 8px;
+    font-size: 11px;
+  }
+
+  .head-video-button {
+    width: 118px;
+    min-height: 56px;
     font-size: 11px;
   }
 
