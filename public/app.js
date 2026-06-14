@@ -1,4 +1,37 @@
 const CURRENT_ACCOUNT_STORAGE_KEY = "ahhd_current_account";
+const LITE_VIDEO_PROGRESS_KEY = "ahhd_lite_video_10_20_progress";
+const LITE_VIDEO_SEQUENCE = [
+  "https://lite.tiktok.com/t/ZSuDtQ4N8/",
+  "https://lite.tiktok.com/t/ZSyDJgyPD/",
+  "https://lite.tiktok.com/t/ZSux1Atfy/",
+  "https://lite.tiktok.com/t/ZSmbYWoHk/",
+  "https://lite.tiktok.com/t/ZSuaQKbvV/",
+  "https://lite.tiktok.com/t/ZSjm5439S/",
+  "https://lite.tiktok.com/t/ZSxeAEEtN/",
+  "https://lite.tiktok.com/t/ZSyFS95VK/",
+  "https://lite.tiktok.com/t/ZSmdeGmCj/",
+  "https://lite.tiktok.com/t/ZSjARxpPT/",
+  "https://lite.tiktok.com/t/ZSrEfkbvo/",
+  "https://lite.tiktok.com/t/ZSMaPg99o/",
+  "https://lite.tiktok.com/t/ZS9E7e1L5/",
+  "https://lite.tiktok.com/t/ZShYALDLA/",
+  "https://lite.tiktok.com/t/ZSH1YHVsk/",
+  "https://lite.tiktok.com/t/ZS2qdAuor/",
+  "https://lite.tiktok.com/t/ZSQyFL91C/",
+  "https://lite.tiktok.com/t/ZSHQSqsGq/",
+  "https://lite.tiktok.com/t/ZSa7W2pEN/",
+  "https://lite.tiktok.com/t/ZSrJxNmCK/",
+  "https://lite.tiktok.com/t/ZSM43sfyA/",
+  "https://lite.tiktok.com/t/ZSrJxakog/",
+  "https://lite.tiktok.com/t/ZSSqEvkXF/",
+  "https://lite.tiktok.com/t/ZSry3KYu7/",
+  "https://lite.tiktok.com/t/ZSrjqdo5Q/",
+  "https://lite.tiktok.com/t/ZShX3CRbr/",
+  "https://lite.tiktok.com/t/ZShVmu2pc/",
+  "https://lite.tiktok.com/t/ZS6rUywGN/",
+  "https://lite.tiktok.com/t/ZSrGTDx7a/",
+  "https://lite.tiktok.com/t/ZS6rUtJ2s/"
+];
 
 const state = {
   page: location.pathname.includes("settings") ? "settings" : "home",
@@ -232,13 +265,15 @@ function renderSearchPanel(settings) {
 
 function renderVideoPanel(settings) {
   if (settings.display.display_video_panel !== "true") return "";
+  const liteProgress = getLiteVideoProgress();
+  const liteBadge = liteProgress ? `<span class="video-progress-badge">${liteProgress}/${LITE_VIDEO_SEQUENCE.length}</span>` : "";
   return `
     <section class="panel video-panel">
       <div class="panel-header"><span>Xem Video</span><small>Mở nhóm video nhanh</small></div>
       <div class="panel-body">
         <div class="button-row">
           ${settings.display.display_video_normal_60 === "true" ? `<button data-video-group="normal">Video Thường 60p</button>` : ""}
-          ${settings.display.display_video_lite_60 === "true" ? `<button data-video-group="lite60">Video Lite 60p</button>` : ""}
+          ${settings.display.display_video_lite_60 === "true" ? `<button data-video-group="lite60" class="video-sequence-button"><span>Video Lite 10-20p</span>${liteBadge}</button>` : ""}
           ${settings.display.display_video_lite_180 === "true" ? `<button data-video-group="lite180">Video Lite 180p</button>` : ""}
         </div>
       </div>
@@ -814,12 +849,26 @@ async function handleSearch(event) {
 
 function openVideoGroup(group) {
   const settings = state.data.settings;
+  if (group === "lite60") {
+    openSequentialLiteVideo();
+    return;
+  }
   const links = group === "normal" ? [settings.videoNormal60].filter(Boolean) : group === "lite60" ? settings.videoLite60 : settings.videoLite180;
   if (links.length === 1) {
     window.open(links[0], "_blank", "noopener,noreferrer");
     return;
   }
   showModal("Chọn video", `<div class="video-grid">${links.map((link, index) => `<a class="action-button" href="${escapeAttr(link)}" target="_blank" rel="noopener noreferrer">Link ${index + 1}</a>`).join("")}</div>`);
+}
+
+function openSequentialLiteVideo() {
+  const current = getLiteVideoProgress();
+  const nextIndex = current % LITE_VIDEO_SEQUENCE.length;
+  const nextNumber = nextIndex + 1;
+  saveLiteVideoProgress(nextNumber);
+  const badge = document.querySelector('[data-video-group="lite60"] .video-progress-badge');
+  if (badge) badge.textContent = `${nextNumber}/${LITE_VIDEO_SEQUENCE.length}`;
+  window.location.href = LITE_VIDEO_SEQUENCE[nextIndex];
 }
 
 async function showLinkStatsModal() {
@@ -918,6 +967,23 @@ function clearStoredCurrentAccount() {
     localStorage.removeItem(CURRENT_ACCOUNT_STORAGE_KEY);
   } catch {
     // Ignore storage failures.
+  }
+}
+
+function getLiteVideoProgress() {
+  try {
+    const value = Number(localStorage.getItem(LITE_VIDEO_PROGRESS_KEY) || "0");
+    return Number.isInteger(value) && value >= 1 && value <= LITE_VIDEO_SEQUENCE.length ? value : 0;
+  } catch {
+    return 0;
+  }
+}
+
+function saveLiteVideoProgress(value) {
+  try {
+    localStorage.setItem(LITE_VIDEO_PROGRESS_KEY, String(value));
+  } catch {
+    // Ignore storage failures; the redirect still works.
   }
 }
 
