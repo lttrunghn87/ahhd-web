@@ -285,8 +285,11 @@ function renderVideoPanel(settings) {
 function renderLiteVideoButton(extraClass = "") {
   const liteProgress = getLiteVideoProgress();
   const nextIndex = liteProgress % LITE_VIDEO_SEQUENCE.length;
-  const liteBadge = liteProgress ? `<span class="video-progress-badge">${liteProgress}/${LITE_VIDEO_SEQUENCE.length}</span>` : "";
-  return `<a href="${escapeAttr(LITE_VIDEO_SEQUENCE[nextIndex])}" data-lite-sequence-link class="video-sequence-button ${extraClass}"><span>Video Lite 10-20p</span>${liteBadge}</a>`;
+  return `
+    <form class="lite-video-form ${extraClass}" action="${escapeAttr(LITE_VIDEO_SEQUENCE[nextIndex])}" method="get">
+      <button type="submit" data-lite-sequence-button class="video-sequence-button">Video Lite 10-20p</button>
+    </form>
+  `;
 }
 
 function renderIcloudPanel(settings) {
@@ -611,7 +614,7 @@ function bindPageEvents() {
     el.closest("tr")?.remove();
   }));
   document.querySelectorAll("[data-copy]").forEach((el) => el.addEventListener("click", () => copyText(el.dataset.copy || "")));
-  document.querySelectorAll("[data-lite-sequence-link]").forEach((el) => el.addEventListener("click", updateLiteVideoProgress));
+  document.querySelectorAll(".lite-video-form").forEach((el) => el.addEventListener("submit", updateLiteVideoProgress));
   document.querySelectorAll("[data-video-group]").forEach((el) => el.addEventListener("click", () => openVideoGroup(el.dataset.videoGroup)));
   document.querySelectorAll("[data-settings-panel]").forEach((el) => el.addEventListener("click", () => {
     state.selectedManagerPanel = null;
@@ -871,8 +874,6 @@ function updateLiteVideoProgress() {
   const nextIndex = current % LITE_VIDEO_SEQUENCE.length;
   const nextNumber = nextIndex + 1;
   saveLiteVideoProgress(nextNumber);
-  const badge = document.querySelector("[data-lite-sequence-link] .video-progress-badge");
-  if (badge) badge.textContent = `${nextNumber}/${LITE_VIDEO_SEQUENCE.length}`;
 }
 
 async function showLinkStatsModal() {

@@ -831,40 +831,36 @@ th {
 
 .video-sequence-button {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-}
-
-.video-progress-badge {
-  display: inline-flex;
-  min-width: 46px;
+  width: 100%;
+  min-height: 46px;
   align-items: center;
   justify-content: center;
-  border-radius: 999px;
-  padding: 3px 8px;
-  background: var(--primary);
+  gap: 10px;
+  border: 0;
+  border-radius: 7px;
+  background: #56a9e6;
   color: #ffffff;
-  font-size: 12px;
+  font-size: 15px;
   font-weight: 800;
+  line-height: 1.2;
+  text-align: center;
+  box-shadow: 0 4px 12px rgb(37 99 235 / 0.18);
+  cursor: pointer;
+}
+
+.video-sequence-button:hover {
+  background: #3f96d4;
 }
 
 .head-video-button {
   width: 120px;
-  min-height: 58px;
-  padding: 7px 8px;
-  border-color: var(--primary);
-  background: #ffffff;
-  color: var(--text);
-  font-size: 12px;
-  line-height: 1.15;
-  text-align: left;
+  margin: 0;
 }
 
-.head-video-button .video-progress-badge {
-  min-width: 38px;
-  padding: 3px 6px;
-  font-size: 11px;
+.head-video-button .video-sequence-button {
+  min-height: 46px;
+  padding: 8px;
+  font-size: 13px;
 }
 
 .link-panel textarea {
