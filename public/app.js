@@ -284,8 +284,9 @@ function renderVideoPanel(settings) {
 
 function renderLiteVideoButton(extraClass = "") {
   const liteProgress = getLiteVideoProgress();
+  const nextIndex = liteProgress % LITE_VIDEO_SEQUENCE.length;
   const liteBadge = liteProgress ? `<span class="video-progress-badge">${liteProgress}/${LITE_VIDEO_SEQUENCE.length}</span>` : "";
-  return `<button type="button" data-video-group="lite60" class="video-sequence-button ${extraClass}"><span>Video Lite 10-20p</span>${liteBadge}</button>`;
+  return `<a href="${escapeAttr(LITE_VIDEO_SEQUENCE[nextIndex])}" data-lite-sequence-link class="video-sequence-button ${extraClass}"><span>Video Lite 10-20p</span>${liteBadge}</a>`;
 }
 
 function renderIcloudPanel(settings) {
@@ -610,6 +611,7 @@ function bindPageEvents() {
     el.closest("tr")?.remove();
   }));
   document.querySelectorAll("[data-copy]").forEach((el) => el.addEventListener("click", () => copyText(el.dataset.copy || "")));
+  document.querySelectorAll("[data-lite-sequence-link]").forEach((el) => el.addEventListener("click", updateLiteVideoProgress));
   document.querySelectorAll("[data-video-group]").forEach((el) => el.addEventListener("click", () => openVideoGroup(el.dataset.videoGroup)));
   document.querySelectorAll("[data-settings-panel]").forEach((el) => el.addEventListener("click", () => {
     state.selectedManagerPanel = null;
@@ -856,11 +858,7 @@ async function handleSearch(event) {
 
 function openVideoGroup(group) {
   const settings = state.data.settings;
-  if (group === "lite60") {
-    openSequentialLiteVideo();
-    return;
-  }
-  const links = group === "normal" ? [settings.videoNormal60].filter(Boolean) : group === "lite60" ? settings.videoLite60 : settings.videoLite180;
+  const links = group === "normal" ? [settings.videoNormal60].filter(Boolean) : settings.videoLite180;
   if (links.length === 1) {
     window.open(links[0], "_blank", "noopener,noreferrer");
     return;
@@ -868,14 +866,13 @@ function openVideoGroup(group) {
   showModal("Chọn video", `<div class="video-grid">${links.map((link, index) => `<a class="action-button" href="${escapeAttr(link)}" target="_blank" rel="noopener noreferrer">Link ${index + 1}</a>`).join("")}</div>`);
 }
 
-function openSequentialLiteVideo() {
+function updateLiteVideoProgress() {
   const current = getLiteVideoProgress();
   const nextIndex = current % LITE_VIDEO_SEQUENCE.length;
   const nextNumber = nextIndex + 1;
   saveLiteVideoProgress(nextNumber);
-  const badge = document.querySelector('[data-video-group="lite60"] .video-progress-badge');
+  const badge = document.querySelector("[data-lite-sequence-link] .video-progress-badge");
   if (badge) badge.textContent = `${nextNumber}/${LITE_VIDEO_SEQUENCE.length}`;
-  window.location.href = LITE_VIDEO_SEQUENCE[nextIndex];
 }
 
 async function showLinkStatsModal() {
