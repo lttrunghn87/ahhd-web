@@ -608,7 +608,7 @@ function bindPageEvents() {
     });
   });
 
-  document.querySelectorAll("form").forEach((form) => form.addEventListener("submit", handleSubmit));
+  document.querySelectorAll("form:not(.lite-video-form)").forEach((form) => form.addEventListener("submit", handleSubmit));
   document.querySelectorAll("[data-action]").forEach((el) => el.addEventListener("click", handleAction));
   document.querySelectorAll("[data-remove-employee]").forEach((el) => el.addEventListener("click", () => {
     el.closest("tr")?.remove();
