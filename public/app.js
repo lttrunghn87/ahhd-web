@@ -190,6 +190,7 @@ function renderAccountPanel(settings) {
         <button class="btn-refresh" data-action="get-account" data-type="mail">${settingsIcon("mail")}<span>Lấy Mail Đăng ký</span></button>
         <button class="btn-refresh" data-action="get-account" data-type="normal">${settingsIcon("users")}<span>Lấy Tài khoản Thường</span></button>
         <button class="btn-green" data-action="get-account" data-type="2fa">${settingsIcon("shield")}<span>Lấy Tài khoản 2FA</span></button>
+        <a class="btn-apk" href="/downloads/NexusTiktok-release.apk" download="NexusTiktok-release.apk" rel="nofollow">${settingsIcon("download")}<span>Tải APK video</span></a>
       </div>
     </div>
   `;
@@ -411,6 +412,7 @@ function settingsIcon(name) {
     apple: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16.4 13c0-2 1.4-3 1.5-3.1-1-1.4-2.4-1.6-2.9-1.6-1.2-.1-2.4.7-3 0-.6-.7-1.6-.7-2.5-.7-1.3 0-2.6.8-3.3 2-1.4 2.4-.4 6 1 8 .7 1 1.5 2.2 2.6 2.1 1 0 1.4-.7 2.7-.7 1.2 0 1.6.7 2.7.7s1.8-1 2.5-2c.8-1.2 1.1-2.3 1.1-2.4 0 0-2.4-.9-2.4-2.3ZM14.2 7c.5-.7 1-1.6.8-2.5-.8 0-1.8.5-2.4 1.2-.5.6-1 1.6-.8 2.5.9.1 1.8-.5 2.4-1.2Z"/></svg>`,
     mail: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5h18v14H3V5Zm2 3.2V17h14V8.2l-7 5.1-7-5.1Zm1.5-1.2 5.5 4 5.5-4h-11Z"/></svg>`,
     key: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 14a5 5 0 1 1 4.6-7H22v4h-3v3h-4v-2.1A5 5 0 0 1 8 14Zm0-3a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z"/></svg>`,
+    download: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 3h2v9l3.5-3.5 1.4 1.4L12 15.8 6.1 9.9l1.4-1.4L11 12V3ZM5 18h14v2H5v-2Z"/></svg>`,
     display: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 4h18v13H3V4Zm2 2v9h14V6H5Zm4 13h6v2H9v-2Z"/></svg>`
   };
   return `<span class="settings-icon">${icons[name] || icons.bolt}</span>`;
