@@ -1,6 +1,7 @@
 import { readFile, readdir } from "node:fs/promises";
 
 const uploadVideoCount = 254;
+const profileImageCount = 165;
 
 const requiredFiles = [
   "public/index.html",
@@ -53,10 +54,15 @@ const api = await readFile("functions/api/[[path]].ts", "utf8");
 for (const action of ["save_video_links", "save_account_list", "get_link_stats", "view_2fa_by_date", "get_profile_image", "confirm_profile_image", "get_upload_video", "confirm_upload_video"]) {
   if (!api.includes(action)) throw new Error(`Missing backend action: ${action}`);
 }
-for (const imageToken of ["length: 500", "profile_", "padStart(4, \"0\")", ".jpg"]) {
+for (const imageToken of [`length: ${profileImageCount}`, "profile_", "padStart(4, \"0\")", ".jpg", "profile_assets_batch"]) {
   if (!api.includes(imageToken)) throw new Error(`Missing profile image token: ${imageToken}`);
 }
 if (api.includes("profile-001.svg")) throw new Error("Old sample SVG profile image is still referenced");
+if (api.includes("length: 500")) throw new Error("Old 500-image profile count is still referenced");
+const profileImages = (await readdir("public/profile-images")).filter((name) => /^profile_\d{4}\.jpg$/.test(name));
+if (profileImages.length !== profileImageCount) {
+  throw new Error(`Expected ${profileImageCount} profile images, found ${profileImages.length}`);
+}
 for (const videoToken of ["upload_video_assets", `length: ${uploadVideoCount}`, "upload_video_", ".mp4"]) {
   if (!api.includes(videoToken)) throw new Error(`Missing upload video token: ${videoToken}`);
 }

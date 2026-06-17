@@ -862,7 +862,7 @@ function openVideoGroup(group) {
 async function downloadProfileImage() {
   const result = await api("get_profile_image", {}, "GET");
   if (!result.ok || !result.path) throw new Error(result.message || "Chưa có ảnh profile khả dụng.");
-  triggerDownload(result.path, result.downloadName || "profile-image.svg");
+  triggerDownload(result.downloadPath || result.path, result.downloadName || "profile-image.jpg");
   savePendingProfileImage(result.path);
   render();
   showToast("Đã tải ảnh. Bấm Confirm nếu ảnh này đã được sử dụng.");

@@ -11,8 +11,9 @@ type Ctx = {
 const SESSION_MAX_AGE = 60 * 60 * 12;
 let schemaReady = false;
 const PROFILE_IMAGE_PREFIX = "/profile-images/";
+const PROFILE_IMAGE_BATCH = "profile_people_500_images_20260618_165";
 const PROFILE_IMAGES = Array.from(
-  { length: 500 },
+  { length: 165 },
   (_, index) => `${PROFILE_IMAGE_PREFIX}profile_${String(index + 1).padStart(4, "0")}.jpg`
 );
 const UPLOAD_VIDEO_PREFIX = "/upload-videos/";
@@ -251,7 +252,12 @@ async function ensureSchema(db: D1Database) {
   const uploadVideoDefaults = UPLOAD_VIDEOS.map((path) =>
     db.prepare("INSERT OR IGNORE INTO upload_video_assets (path, status) VALUES (?, 'available')").bind(path)
   );
-  await db.prepare("DELETE FROM profile_assets WHERE path NOT LIKE '/profile-images/profile_%.jpg'").run();
+  const profileBatch = await db.prepare("SELECT value FROM settings WHERE key = 'profile_assets_batch'").first<any>();
+  if (profileBatch?.value !== PROFILE_IMAGE_BATCH) {
+    await db.prepare("DELETE FROM profile_assets").run();
+    await db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES ('profile_assets_batch', ?)").bind(PROFILE_IMAGE_BATCH).run();
+  }
+  await db.prepare(`DELETE FROM profile_assets WHERE path NOT IN (${PROFILE_IMAGES.map(() => "?").join(",")})`).bind(...PROFILE_IMAGES).run();
   await db.prepare("DELETE FROM upload_video_assets WHERE path NOT LIKE '/upload-videos/upload_video_%.mp4'").run();
   await db.batch([...missingDefaults, ...profileDefaults, ...uploadVideoDefaults]);
 
@@ -469,7 +475,7 @@ async function getProfileImage(db: D1Database) {
     .prepare("SELECT path FROM profile_assets WHERE status != 'used' AND path LIKE '/profile-images/profile_%.jpg' ORDER BY created_at, path LIMIT 1")
     .first<any>();
   if (!row?.path) return { ok: false, message: "Hien chua con anh profile kha dung." };
-  return { ok: true, path: row.path, downloadName: row.path.split("/").pop() || "profile-image.jpg" };
+  return { ok: true, path: row.path, downloadPath: `${row.path}?v=${PROFILE_IMAGE_BATCH}`, downloadName: row.path.split("/").pop() || "profile-image.jpg" };
 }
 
 async function confirmProfileImage(db: D1Database, path: string) {
