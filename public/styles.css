@@ -1516,6 +1516,20 @@ button,
   grid-column: span 2;
 }
 
+.account-media-action {
+  grid-column: span 6;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  box-shadow: inset 0 0 0 1px #edf2f7;
+  color: var(--text);
+  text-align: left;
+}
+
+.account-media-action:hover {
+  border-color: var(--primary);
+  background: #f8fafc;
+}
+
 .account-clear-action {
   border: 1px solid #cbd5e1;
   background: #f8fafc;

@@ -184,6 +184,9 @@ function renderAccountPanel(settings) {
   const displayedPassword = issuedType === "mail" ? issuedPassword : (settings.defaultPasswordEnabled ? settings.defaultPassword : issuedPassword);
   const displayed2FA = issuedType === "2fa" && issued2FACode ? issued2FACode : issuedSecret;
   const twofaInputName = issuedType === "2fa" && issued2FACode ? "twofa_code" : "secret";
+  const pendingProfileImage = loadPendingProfileImage();
+  const showProfileDownload = settings.display.display_video_panel === "true" && settings.display.display_video_normal_60 === "true";
+  const showUploadVideo = settings.display.display_video_panel === "true" && settings.display.display_video_lite_180 === "true";
   const emptyState = `
     <div class="account-choice">
       <p class="muted">Chọn loại tài khoản bạn muốn lấy:</p>
@@ -228,6 +231,8 @@ function renderAccountPanel(settings) {
         <button type="button" class="btn-refresh account-type-action" data-action="get-account" data-type="mail">Mail ĐK</button>
         <button type="button" class="btn-refresh account-type-action" data-action="get-account" data-type="normal">TK Thường</button>
         <button type="button" class="btn-green account-type-action" data-action="get-account" data-type="2fa">TK 2FA</button>
+        ${showProfileDownload ? `<button type="button" class="account-media-action account-profile-action" data-action="${pendingProfileImage ? "confirm-profile-image" : "download-profile-image"}">${pendingProfileImage ? "Confirm" : "Tải Ảnh Profile"}</button>` : ""}
+        ${showUploadVideo ? `<button type="button" class="account-media-action account-upload-video-action" data-action="download-upload-video">Tải video up tiktok</button>` : ""}
       </div>
     </form>
   `;
@@ -263,19 +268,7 @@ function renderSearchPanel(settings) {
 }
 
 function renderVideoPanel(settings) {
-  if (settings.display.display_video_panel !== "true") return "";
-  const pendingProfileImage = loadPendingProfileImage();
-  return `
-    <section class="panel video-panel">
-      <div class="panel-header"><span>Xem Video</span><small>Mở nhóm video nhanh</small></div>
-      <div class="panel-body">
-        <div class="button-row">
-          ${settings.display.display_video_normal_60 === "true" ? `<button data-action="${pendingProfileImage ? "confirm-profile-image" : "download-profile-image"}">${pendingProfileImage ? "Confirm" : "Tải Ảnh Profile"}</button>` : ""}
-          ${settings.display.display_video_lite_180 === "true" ? `<button data-action="download-upload-video">Tải video up tiktok</button>` : ""}
-        </div>
-      </div>
-    </section>
-  `;
+  return "";
 }
 
 function renderLiteVideoButton(extraClass = "") {
