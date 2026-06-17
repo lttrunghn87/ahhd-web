@@ -15,6 +15,11 @@ const PROFILE_IMAGES = Array.from(
   { length: 500 },
   (_, index) => `${PROFILE_IMAGE_PREFIX}profile_${String(index + 1).padStart(4, "0")}.jpg`
 );
+const UPLOAD_VIDEO_PREFIX = "/upload-videos/";
+const UPLOAD_VIDEOS = Array.from(
+  { length: 254 },
+  (_, index) => `${UPLOAD_VIDEO_PREFIX}upload_video_${String(index + 1).padStart(4, "0")}.mp4`
+);
 const DEFAULT_VIDEO_LITE_60 = [
   "https://lite.tiktok.com/t/ZSQQ6ou9t/",
   "https://lite.tiktok.com/t/ZSQQMxFLk/",
@@ -193,6 +198,10 @@ export const onRequest = async (ctx: Ctx) => {
         return response(await getProfileImage(ctx.env.DB));
       case "confirm_profile_image":
         return response(await confirmProfileImage(ctx.env.DB, String(body.path || "")));
+      case "get_upload_video":
+        return response(await getUploadVideo(ctx.env.DB));
+      case "confirm_upload_video":
+        return response(await confirmUploadVideo(ctx.env.DB, String(body.path || "")));
       default:
         return response({ ok: false, message: `Action khong hop le: ${action}` }, 404);
     }
@@ -214,6 +223,7 @@ async function ensureSchema(db: D1Database) {
     CREATE TABLE IF NOT EXISTS submitted_links (id INTEGER PRIMARY KEY AUTOINCREMENT, employee TEXT NOT NULL, link TEXT NOT NULL, created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP);
     CREATE TABLE IF NOT EXISTS twofa_records (id INTEGER PRIMARY KEY AUTOINCREMENT, email TEXT, username TEXT, password TEXT, secret TEXT NOT NULL, code TEXT, created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP);
     CREATE TABLE IF NOT EXISTS profile_assets (path TEXT PRIMARY KEY, status TEXT NOT NULL DEFAULT 'available', used_at TEXT, created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP);
+    CREATE TABLE IF NOT EXISTS upload_video_assets (path TEXT PRIMARY KEY, status TEXT NOT NULL DEFAULT 'available', used_at TEXT, created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP);
   `);
 
   if (!defaultSettings.settings_password_hash) {
@@ -238,8 +248,12 @@ async function ensureSchema(db: D1Database) {
   const profileDefaults = PROFILE_IMAGES.map((path) =>
     db.prepare("INSERT OR IGNORE INTO profile_assets (path, status) VALUES (?, 'available')").bind(path)
   );
+  const uploadVideoDefaults = UPLOAD_VIDEOS.map((path) =>
+    db.prepare("INSERT OR IGNORE INTO upload_video_assets (path, status) VALUES (?, 'available')").bind(path)
+  );
   await db.prepare("DELETE FROM profile_assets WHERE path NOT LIKE '/profile-images/profile_%.jpg'").run();
-  await db.batch([...missingDefaults, ...profileDefaults]);
+  await db.prepare("DELETE FROM upload_video_assets WHERE path NOT LIKE '/upload-videos/upload_video_%.mp4'").run();
+  await db.batch([...missingDefaults, ...profileDefaults, ...uploadVideoDefaults]);
 
   schemaReady = true;
 }
@@ -467,6 +481,25 @@ async function confirmProfileImage(db: D1Database, path: string) {
   const changes = Number(result.meta?.changes || 0);
   if (!changes) return { ok: false, message: "Anh nay da duoc xac nhan hoac khong con kha dung." };
   return { ok: true, message: "Da xac nhan anh profile da su dung." };
+}
+
+async function getUploadVideo(db: D1Database) {
+  const row = await db
+    .prepare("SELECT path FROM upload_video_assets WHERE status != 'used' AND path LIKE '/upload-videos/upload_video_%.mp4' ORDER BY created_at, path LIMIT 1")
+    .first<any>();
+  if (!row?.path) return { ok: false, message: "Hien chua con video up TikTok kha dung." };
+  return { ok: true, path: row.path, downloadName: row.path.split("/").pop() || "upload-video.mp4" };
+}
+
+async function confirmUploadVideo(db: D1Database, path: string) {
+  if (!UPLOAD_VIDEOS.includes(path)) return { ok: false, message: "Video up TikTok khong hop le." };
+  const result = await db
+    .prepare("UPDATE upload_video_assets SET status = 'used', used_at = CURRENT_TIMESTAMP WHERE path = ? AND status != 'used'")
+    .bind(path)
+    .run();
+  const changes = Number(result.meta?.changes || 0);
+  if (!changes) return { ok: false, message: "Video nay da duoc xac nhan hoac khong con kha dung." };
+  return { ok: true, message: "Da xac nhan video up TikTok da su dung." };
 }
 
 async function getEmployeeManager(db: D1Database) {

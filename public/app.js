@@ -1,6 +1,7 @@
 const CURRENT_ACCOUNT_STORAGE_KEY = "ahhd_current_account";
 const LITE_VIDEO_PROGRESS_KEY = "ahhd_lite_video_10_20_progress";
 const PROFILE_IMAGE_PENDING_KEY = "ahhd_pending_profile_image";
+const UPLOAD_VIDEO_PENDING_KEY = "ahhd_pending_upload_video";
 const LITE_VIDEO_SEQUENCE = [
   "https://lite.tiktok.com/t/ZSQQ6ou9t/",
   "https://lite.tiktok.com/t/ZSQQMxFLk/",
@@ -185,6 +186,7 @@ function renderAccountPanel(settings) {
   const displayed2FA = issuedType === "2fa" && issued2FACode ? issued2FACode : issuedSecret;
   const twofaInputName = issuedType === "2fa" && issued2FACode ? "twofa_code" : "secret";
   const pendingProfileImage = loadPendingProfileImage();
+  const pendingUploadVideo = loadPendingUploadVideo();
   const showProfileDownload = settings.display.display_video_panel === "true" && settings.display.display_video_normal_60 === "true";
   const showUploadVideo = settings.display.display_video_panel === "true" && settings.display.display_video_lite_180 === "true";
   const emptyState = `
@@ -232,7 +234,7 @@ function renderAccountPanel(settings) {
         <button type="button" class="btn-refresh account-type-action" data-action="get-account" data-type="normal">TK Thường</button>
         <button type="button" class="btn-green account-type-action" data-action="get-account" data-type="2fa">TK 2FA</button>
         ${showProfileDownload ? `<button type="button" class="account-media-action account-profile-action" data-action="${pendingProfileImage ? "confirm-profile-image" : "download-profile-image"}">${pendingProfileImage ? "Confirm" : "Tải Ảnh Profile"}</button>` : ""}
-        ${showUploadVideo ? `<button type="button" class="account-media-action account-upload-video-action" data-action="download-upload-video">Tải video up tiktok</button>` : ""}
+        ${showUploadVideo ? `<button type="button" class="account-media-action account-upload-video-action" data-action="${pendingUploadVideo ? "confirm-upload-video" : "download-upload-video"}">${pendingUploadVideo ? "Confirm" : "Tải video up tiktok"}</button>` : ""}
       </div>
     </form>
   `;
@@ -702,9 +704,8 @@ async function handleAction(event) {
     if (action === "load-employee-stats") await loadEmployeeStats();
     if (action === "download-profile-image") await downloadProfileImage();
     if (action === "confirm-profile-image") await confirmProfileImage();
-    if (action === "download-upload-video") {
-      showToast("Chức năng tải video up TikTok sẽ được cập nhật rule sau.", true);
-    }
+    if (action === "download-upload-video") await downloadUploadVideo();
+    if (action === "confirm-upload-video") await confirmUploadVideo();
   } catch (error) {
     showToast(error.message, true);
   }
@@ -881,6 +882,34 @@ async function confirmProfileImage() {
   showToast(result.message || "Đã chuyển ảnh sang đã sử dụng.");
 }
 
+async function downloadUploadVideo() {
+  const result = await api("get_upload_video", {}, "GET");
+  if (!result.ok || !result.path) throw new Error(result.message || "Chưa có video up TikTok khả dụng.");
+  triggerDownload(result.path, result.downloadName || "upload-video.mp4");
+  savePendingUploadVideo(result.path);
+  render();
+  showToast("Đã tải video. Bấm Confirm nếu video này đã được sử dụng.");
+}
+
+async function confirmUploadVideo() {
+  const path = loadPendingUploadVideo();
+  if (!path) {
+    render();
+    return;
+  }
+  let result;
+  try {
+    result = await api("confirm_upload_video", { path });
+  } catch (error) {
+    clearPendingUploadVideo();
+    render();
+    throw error;
+  }
+  clearPendingUploadVideo();
+  render();
+  showToast(result.message || "Đã chuyển video sang đã sử dụng.");
+}
+
 function triggerDownload(path, filename) {
   const link = document.createElement("a");
   link.href = path;
@@ -1024,6 +1053,30 @@ function savePendingProfileImage(path) {
 function clearPendingProfileImage() {
   try {
     localStorage.removeItem(PROFILE_IMAGE_PENDING_KEY);
+  } catch {
+    // Ignore storage failures.
+  }
+}
+
+function loadPendingUploadVideo() {
+  try {
+    return localStorage.getItem(UPLOAD_VIDEO_PENDING_KEY) || "";
+  } catch {
+    return "";
+  }
+}
+
+function savePendingUploadVideo(path) {
+  try {
+    localStorage.setItem(UPLOAD_VIDEO_PENDING_KEY, path);
+  } catch {
+    // Ignore storage failures; the downloaded video still works.
+  }
+}
+
+function clearPendingUploadVideo() {
+  try {
+    localStorage.removeItem(UPLOAD_VIDEO_PENDING_KEY);
   } catch {
     // Ignore storage failures.
   }

@@ -1,4 +1,6 @@
-import { readFile } from "node:fs/promises";
+import { readFile, readdir } from "node:fs/promises";
+
+const uploadVideoCount = 254;
 
 const requiredFiles = [
   "public/index.html",
@@ -14,7 +16,7 @@ for (const file of requiredFiles) {
 }
 
 const app = await readFile("public/app.js", "utf8");
-for (const action of ["get_initial_data", "unlock_settings", "get_account_client", "submit_user_links", "download-profile-image"]) {
+for (const action of ["get_initial_data", "unlock_settings", "get_account_client", "submit_user_links", "download-profile-image", "confirm-profile-image", "download-upload-video", "confirm-upload-video"]) {
   if (!app.includes(action)) throw new Error(`Missing frontend action: ${action}`);
 }
 for (const removedAction of ["get-mail-code", "open-mailbox"]) {
@@ -44,12 +46,20 @@ if (styles.includes(".account-media-action {\n  grid-column: span 6")) {
 }
 
 const api = await readFile("functions/api/[[path]].ts", "utf8");
-for (const action of ["save_video_links", "save_account_list", "get_link_stats", "view_2fa_by_date", "get_profile_image", "confirm_profile_image"]) {
+for (const action of ["save_video_links", "save_account_list", "get_link_stats", "view_2fa_by_date", "get_profile_image", "confirm_profile_image", "get_upload_video", "confirm_upload_video"]) {
   if (!api.includes(action)) throw new Error(`Missing backend action: ${action}`);
 }
 for (const imageToken of ["length: 500", "profile_", "padStart(4, \"0\")", ".jpg"]) {
   if (!api.includes(imageToken)) throw new Error(`Missing profile image token: ${imageToken}`);
 }
 if (api.includes("profile-001.svg")) throw new Error("Old sample SVG profile image is still referenced");
+for (const videoToken of ["upload_video_assets", `length: ${uploadVideoCount}`, "upload_video_", ".mp4"]) {
+  if (!api.includes(videoToken)) throw new Error(`Missing upload video token: ${videoToken}`);
+}
+
+const uploadVideos = (await readdir("public/upload-videos")).filter((name) => /^upload_video_\d{4}\.mp4$/.test(name));
+if (uploadVideos.length !== uploadVideoCount) {
+  throw new Error(`Expected ${uploadVideoCount} upload videos, found ${uploadVideos.length}`);
+}
 
 console.log("Project check passed.");

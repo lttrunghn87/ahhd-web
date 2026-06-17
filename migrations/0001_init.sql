@@ -53,3 +53,10 @@ CREATE TABLE IF NOT EXISTS profile_assets (
   used_at TEXT,
   created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE TABLE IF NOT EXISTS upload_video_assets (
+  path TEXT PRIMARY KEY,
+  status TEXT NOT NULL DEFAULT 'available',
+  used_at TEXT,
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
