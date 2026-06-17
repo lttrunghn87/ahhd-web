@@ -266,6 +266,11 @@ button,
   color: #ffffff;
 }
 
+.account-choice-actions .account-media-action {
+  color: var(--text);
+  background: #ffffff;
+}
+
 .account-switch {
   display: grid;
   gap: 8px;

@@ -46,6 +46,9 @@ for (const compactStyle of ["account-compact-actions", "grid-template-columns: r
 for (const mediaStyle of ["account-media-action", "grid-column: span 3"]) {
   if (!styles.includes(mediaStyle)) throw new Error(`Missing moved media button style: ${mediaStyle}`);
 }
+if (!styles.includes(".account-choice-actions .account-media-action")) {
+  throw new Error("Missing visible empty-state media button override");
+}
 if (styles.includes(".account-media-action {\n  grid-column: span 6")) {
   throw new Error("Media buttons should share one row, not span the full row");
 }
