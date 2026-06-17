@@ -10,6 +10,9 @@ type Ctx = {
 
 const SESSION_MAX_AGE = 60 * 60 * 12;
 let schemaReady = false;
+const PROFILE_IMAGES = [
+  "/profile-images/profile-001.svg"
+];
 const DEFAULT_VIDEO_LITE_60 = [
   "https://lite.tiktok.com/t/ZSQQ6ou9t/",
   "https://lite.tiktok.com/t/ZSQQMxFLk/",
@@ -184,6 +187,10 @@ export const onRequest = async (ctx: Ctx) => {
         return response(await delete2FAByDate(ctx.env.DB, String(body.date || "")));
       case "get_tiktok_mail_code":
         return response({ ok: false, message: "Chua cau hinh API lay code mail." }, 501);
+      case "get_profile_image":
+        return response(await getProfileImage(ctx.env.DB));
+      case "confirm_profile_image":
+        return response(await confirmProfileImage(ctx.env.DB, String(body.path || "")));
       default:
         return response({ ok: false, message: `Action khong hop le: ${action}` }, 404);
     }
@@ -204,6 +211,7 @@ async function ensureSchema(db: D1Database) {
     CREATE TABLE IF NOT EXISTS employees (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL UNIQUE, created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP);
     CREATE TABLE IF NOT EXISTS submitted_links (id INTEGER PRIMARY KEY AUTOINCREMENT, employee TEXT NOT NULL, link TEXT NOT NULL, created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP);
     CREATE TABLE IF NOT EXISTS twofa_records (id INTEGER PRIMARY KEY AUTOINCREMENT, email TEXT, username TEXT, password TEXT, secret TEXT NOT NULL, code TEXT, created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP);
+    CREATE TABLE IF NOT EXISTS profile_assets (path TEXT PRIMARY KEY, status TEXT NOT NULL DEFAULT 'available', used_at TEXT, created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP);
   `);
 
   if (!defaultSettings.settings_password_hash) {
@@ -225,7 +233,10 @@ async function ensureSchema(db: D1Database) {
   const missingDefaults = Object.entries(defaultSettings).map(([key, value]) =>
     db.prepare("INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)").bind(key, value)
   );
-  await db.batch(missingDefaults);
+  const profileDefaults = PROFILE_IMAGES.map((path) =>
+    db.prepare("INSERT OR IGNORE INTO profile_assets (path, status) VALUES (?, 'available')").bind(path)
+  );
+  await db.batch([...missingDefaults, ...profileDefaults]);
 
   schemaReady = true;
 }
@@ -434,6 +445,25 @@ async function saveEmployees(db: D1Database, employees: string[]) {
   await db.prepare("DELETE FROM employees").run();
   for (const name of clean) await db.prepare("INSERT INTO employees (name) VALUES (?)").bind(name).run();
   return { ok: true, message: "Da luu nhan vien." };
+}
+
+async function getProfileImage(db: D1Database) {
+  const row = await db
+    .prepare("SELECT path FROM profile_assets WHERE status != 'used' ORDER BY created_at, path LIMIT 1")
+    .first<any>();
+  if (!row?.path) return { ok: false, message: "Hien chua con anh profile kha dung." };
+  return { ok: true, path: row.path, downloadName: row.path.split("/").pop() || "profile-image.svg" };
+}
+
+async function confirmProfileImage(db: D1Database, path: string) {
+  if (!PROFILE_IMAGES.includes(path)) return { ok: false, message: "Anh profile khong hop le." };
+  const result = await db
+    .prepare("UPDATE profile_assets SET status = 'used', used_at = CURRENT_TIMESTAMP WHERE path = ? AND status != 'used'")
+    .bind(path)
+    .run();
+  const changes = Number(result.meta?.changes || 0);
+  if (!changes) return { ok: false, message: "Anh nay da duoc xac nhan hoac khong con kha dung." };
+  return { ok: true, message: "Da xac nhan anh profile da su dung." };
 }
 
 async function getEmployeeManager(db: D1Database) {

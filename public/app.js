@@ -1,5 +1,6 @@
 const CURRENT_ACCOUNT_STORAGE_KEY = "ahhd_current_account";
 const LITE_VIDEO_PROGRESS_KEY = "ahhd_lite_video_10_20_progress";
+const PROFILE_IMAGE_PENDING_KEY = "ahhd_pending_profile_image";
 const LITE_VIDEO_SEQUENCE = [
   "https://lite.tiktok.com/t/ZSQQ6ou9t/",
   "https://lite.tiktok.com/t/ZSQQMxFLk/",
@@ -270,13 +271,14 @@ function renderSearchPanel(settings) {
 
 function renderVideoPanel(settings) {
   if (settings.display.display_video_panel !== "true") return "";
+  const pendingProfileImage = loadPendingProfileImage();
   return `
     <section class="panel video-panel">
       <div class="panel-header"><span>Xem Video</span><small>Mở nhóm video nhanh</small></div>
       <div class="panel-body">
         <div class="button-row">
-          ${settings.display.display_video_normal_60 === "true" ? `<button data-video-group="normal">Video Thường 60p</button>` : ""}
-          ${settings.display.display_video_lite_180 === "true" ? `<button data-video-group="lite180">Video Lite 180p</button>` : ""}
+          ${settings.display.display_video_normal_60 === "true" ? `<button data-action="${pendingProfileImage ? "confirm-profile-image" : "download-profile-image"}">${pendingProfileImage ? "Confirm" : "Tải Ảnh Profile"}</button>` : ""}
+          ${settings.display.display_video_lite_180 === "true" ? `<button data-action="download-upload-video">Tải video up tiktok</button>` : ""}
         </div>
       </div>
     </section>
@@ -720,6 +722,11 @@ async function handleAction(event) {
     if (action === "add-employee") addEmployeeRow();
     if (action === "save-employees") await saveEmployeeRows();
     if (action === "load-employee-stats") await loadEmployeeStats();
+    if (action === "download-profile-image") await downloadProfileImage();
+    if (action === "confirm-profile-image") await confirmProfileImage();
+    if (action === "download-upload-video") {
+      showToast("Chức năng tải video up TikTok sẽ được cập nhật rule sau.", true);
+    }
   } catch (error) {
     showToast(error.message, true);
   }
@@ -868,6 +875,44 @@ function openVideoGroup(group) {
   showModal("Chọn video", `<div class="video-grid">${links.map((link, index) => `<a class="action-button" href="${escapeAttr(link)}" target="_blank" rel="noopener noreferrer">Link ${index + 1}</a>`).join("")}</div>`);
 }
 
+async function downloadProfileImage() {
+  const result = await api("get_profile_image", {}, "GET");
+  if (!result.ok || !result.path) throw new Error(result.message || "Chưa có ảnh profile khả dụng.");
+  triggerDownload(result.path, result.downloadName || "profile-image.svg");
+  savePendingProfileImage(result.path);
+  render();
+  showToast("Đã tải ảnh. Bấm Confirm nếu ảnh này đã được sử dụng.");
+}
+
+async function confirmProfileImage() {
+  const path = loadPendingProfileImage();
+  if (!path) {
+    render();
+    return;
+  }
+  let result;
+  try {
+    result = await api("confirm_profile_image", { path });
+  } catch (error) {
+    clearPendingProfileImage();
+    render();
+    throw error;
+  }
+  clearPendingProfileImage();
+  render();
+  showToast(result.message || "Đã chuyển ảnh sang đã sử dụng.");
+}
+
+function triggerDownload(path, filename) {
+  const link = document.createElement("a");
+  link.href = path;
+  link.download = filename;
+  link.rel = "nofollow";
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+}
+
 function updateLiteVideoProgress(event) {
   const current = getLiteVideoProgress();
   const nextIndex = current % LITE_VIDEO_SEQUENCE.length;
@@ -977,6 +1022,30 @@ function saveStoredCurrentAccount(account) {
 function clearStoredCurrentAccount() {
   try {
     localStorage.removeItem(CURRENT_ACCOUNT_STORAGE_KEY);
+  } catch {
+    // Ignore storage failures.
+  }
+}
+
+function loadPendingProfileImage() {
+  try {
+    return localStorage.getItem(PROFILE_IMAGE_PENDING_KEY) || "";
+  } catch {
+    return "";
+  }
+}
+
+function savePendingProfileImage(path) {
+  try {
+    localStorage.setItem(PROFILE_IMAGE_PENDING_KEY, path);
+  } catch {
+    // Ignore storage failures; the downloaded image still works.
+  }
+}
+
+function clearPendingProfileImage() {
+  try {
+    localStorage.removeItem(PROFILE_IMAGE_PENDING_KEY);
   } catch {
     // Ignore storage failures.
   }

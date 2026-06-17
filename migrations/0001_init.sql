@@ -46,3 +46,10 @@ CREATE TABLE IF NOT EXISTS twofa_records (
   code TEXT,
   created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE TABLE IF NOT EXISTS profile_assets (
+  path TEXT PRIMARY KEY,
+  status TEXT NOT NULL DEFAULT 'available',
+  used_at TEXT,
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
