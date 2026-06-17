@@ -36,8 +36,11 @@ const styles = await readFile("public/styles.css", "utf8");
 for (const compactStyle of ["account-compact-actions", "grid-template-columns: repeat(6", "grid-column: span 2"]) {
   if (!styles.includes(compactStyle)) throw new Error(`Missing compact account action style: ${compactStyle}`);
 }
-for (const mediaStyle of ["account-media-action", "grid-column: span 6"]) {
+for (const mediaStyle of ["account-media-action", "grid-column: span 3"]) {
   if (!styles.includes(mediaStyle)) throw new Error(`Missing moved media button style: ${mediaStyle}`);
+}
+if (styles.includes(".account-media-action {\n  grid-column: span 6")) {
+  throw new Error("Media buttons should share one row, not span the full row");
 }
 
 const api = await readFile("functions/api/[[path]].ts", "utf8");
