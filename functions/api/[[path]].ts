@@ -10,9 +10,11 @@ type Ctx = {
 
 const SESSION_MAX_AGE = 60 * 60 * 12;
 let schemaReady = false;
-const PROFILE_IMAGES = [
-  "/profile-images/profile-001.svg"
-];
+const PROFILE_IMAGE_PREFIX = "/profile-images/";
+const PROFILE_IMAGES = Array.from(
+  { length: 500 },
+  (_, index) => `${PROFILE_IMAGE_PREFIX}profile_${String(index + 1).padStart(4, "0")}.jpg`
+);
 const DEFAULT_VIDEO_LITE_60 = [
   "https://lite.tiktok.com/t/ZSQQ6ou9t/",
   "https://lite.tiktok.com/t/ZSQQMxFLk/",
@@ -236,6 +238,7 @@ async function ensureSchema(db: D1Database) {
   const profileDefaults = PROFILE_IMAGES.map((path) =>
     db.prepare("INSERT OR IGNORE INTO profile_assets (path, status) VALUES (?, 'available')").bind(path)
   );
+  await db.prepare("DELETE FROM profile_assets WHERE path NOT LIKE '/profile-images/profile_%.jpg'").run();
   await db.batch([...missingDefaults, ...profileDefaults]);
 
   schemaReady = true;
@@ -449,10 +452,10 @@ async function saveEmployees(db: D1Database, employees: string[]) {
 
 async function getProfileImage(db: D1Database) {
   const row = await db
-    .prepare("SELECT path FROM profile_assets WHERE status != 'used' ORDER BY created_at, path LIMIT 1")
+    .prepare("SELECT path FROM profile_assets WHERE status != 'used' AND path LIKE '/profile-images/profile_%.jpg' ORDER BY created_at, path LIMIT 1")
     .first<any>();
   if (!row?.path) return { ok: false, message: "Hien chua con anh profile kha dung." };
-  return { ok: true, path: row.path, downloadName: row.path.split("/").pop() || "profile-image.svg" };
+  return { ok: true, path: row.path, downloadName: row.path.split("/").pop() || "profile-image.jpg" };
 }
 
 async function confirmProfileImage(db: D1Database, path: string) {
