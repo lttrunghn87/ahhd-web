@@ -199,10 +199,6 @@ function renderAccountPanel(settings) {
     <form id="save-2fa-client-form" class="issued-card">
       <input type="hidden" name="email" value="${escapeAttr(issuedEmail || displayedUsername)}" />
       <input type="hidden" name="mail_password" value="${escapeAttr(issuedPassword)}" />
-      <div class="issued-actions two-col">
-        <button type="button" class="btn-green" data-action="get-mail-code"># Get Code</button>
-        <button type="button" class="btn-teal" data-action="open-mailbox">Đọc Hòm Thư</button>
-      </div>
       <div class="issued-divider"></div>
       ${issuedType === "2fa" && issuedSecret ? `<input type="hidden" name="secret" value="${escapeAttr(issuedSecret)}" />` : ""}
       <div class="form-group">
@@ -710,14 +706,6 @@ async function handleAction(event) {
     }
     if (action === "show-link-stats") {
       await showLinkStatsModal();
-    }
-    if (action === "get-mail-code") {
-      const email = document.querySelector('input[name="email"]')?.value || "";
-      const result = await api("get_tiktok_mail_code", { email });
-      showToast(result.code ? `Code: ${result.code}` : result.message || "Chưa có code.");
-    }
-    if (action === "open-mailbox") {
-      showToast("Chưa cấu hình hòm thư/API đọc mail.", true);
     }
     if (action === "add-employee") addEmployeeRow();
     if (action === "save-employees") await saveEmployeeRows();
