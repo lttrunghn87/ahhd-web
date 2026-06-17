@@ -12,8 +12,9 @@ const SESSION_MAX_AGE = 60 * 60 * 12;
 let schemaReady = false;
 const PROFILE_IMAGE_PREFIX = "/profile-images/";
 const PROFILE_IMAGE_BATCH = "profile_people_500_images_20260618_165";
+const PROFILE_IMAGE_COUNT = 165;
 const PROFILE_IMAGES = Array.from(
-  { length: 165 },
+  { length: PROFILE_IMAGE_COUNT },
   (_, index) => `${PROFILE_IMAGE_PREFIX}profile_${String(index + 1).padStart(4, "0")}.jpg`
 );
 const UPLOAD_VIDEO_PREFIX = "/upload-videos/";
@@ -257,7 +258,9 @@ async function ensureSchema(db: D1Database) {
     await db.prepare("DELETE FROM profile_assets").run();
     await db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES ('profile_assets_batch', ?)").bind(PROFILE_IMAGE_BATCH).run();
   }
-  await db.prepare(`DELETE FROM profile_assets WHERE path NOT IN (${PROFILE_IMAGES.map(() => "?").join(",")})`).bind(...PROFILE_IMAGES).run();
+  await db
+    .prepare(`DELETE FROM profile_assets WHERE path NOT LIKE '/profile-images/profile_%.jpg' OR CAST(substr(path, length('/profile-images/profile_') + 1, 4) AS INTEGER) NOT BETWEEN 1 AND ${PROFILE_IMAGE_COUNT}`)
+    .run();
   await db.prepare("DELETE FROM upload_video_assets WHERE path NOT LIKE '/upload-videos/upload_video_%.mp4'").run();
   await db.batch([...missingDefaults, ...profileDefaults, ...uploadVideoDefaults]);
 
