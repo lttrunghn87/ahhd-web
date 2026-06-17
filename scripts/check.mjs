@@ -23,6 +23,15 @@ for (const removedAction of ["get-mail-code", "open-mailbox"]) {
 for (const removedLabel of ["# Get Code", "Đọc Hòm Thư"]) {
   if (app.includes(removedLabel)) throw new Error(`Removed account button label still present: ${removedLabel}`);
 }
+for (const compactToken of ["account-compact-actions", "account-save-action", "account-clear-action"]) {
+  if (!app.includes(compactToken)) throw new Error(`Missing compact account action markup: ${compactToken}`);
+}
+if (app.includes("account-switch-actions")) throw new Error("Old stacked account switch markup is still present");
+
+const styles = await readFile("public/styles.css", "utf8");
+for (const compactStyle of ["account-compact-actions", "grid-template-columns: repeat(6", "grid-column: span 2"]) {
+  if (!styles.includes(compactStyle)) throw new Error(`Missing compact account action style: ${compactStyle}`);
+}
 
 const api = await readFile("functions/api/[[path]].ts", "utf8");
 for (const action of ["save_video_links", "save_account_list", "get_link_stats", "view_2fa_by_date", "get_profile_image", "confirm_profile_image"]) {

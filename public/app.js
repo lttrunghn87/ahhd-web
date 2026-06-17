@@ -222,16 +222,13 @@ function renderAccountPanel(settings) {
           <button type="button" class="copy-icon-btn" data-copy="${escapeAttr(displayed2FA)}" aria-label="Copy 2FA">Copy</button>
         </div>
       </div>
-      <button class="btn-save wide" type="submit">Lưu Tài Khoản</button>
-      <div class="account-switch">
-        <p class="muted">Đổi loại tài khoản:</p>
-        <div class="account-switch-actions">
-          <button type="button" class="btn-refresh" data-action="get-account" data-type="mail">Mail ĐK</button>
-          <button type="button" class="btn-refresh" data-action="get-account" data-type="normal">TK Thường</button>
-          <button type="button" class="btn-green" data-action="get-account" data-type="2fa">TK 2FA</button>
-        </div>
+      <div class="account-compact-actions" aria-label="Thao tác tài khoản">
+        <button class="btn-save account-save-action" type="submit">Lưu Tài Khoản</button>
+        <button type="button" class="account-clear-action" data-action="clear-account">Chọn loại tài khoản khác</button>
+        <button type="button" class="btn-refresh account-type-action" data-action="get-account" data-type="mail">Mail ĐK</button>
+        <button type="button" class="btn-refresh account-type-action" data-action="get-account" data-type="normal">TK Thường</button>
+        <button type="button" class="btn-green account-type-action" data-action="get-account" data-type="2fa">TK 2FA</button>
       </div>
-      <button type="button" class="wide" data-action="clear-account">Chọn loại tài khoản khác</button>
     </form>
   `;
   return `
