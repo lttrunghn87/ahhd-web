@@ -31,6 +31,10 @@ for (const compactToken of ["account-compact-actions", "account-save-action", "a
 for (const mediaToken of ["account-media-action", "account-profile-action", "account-upload-video-action"]) {
   if (!app.includes(mediaToken)) throw new Error(`Missing moved media button markup: ${mediaToken}`);
 }
+for (const emptyMediaAction of ["data-action=\"download-profile-image\"", "data-action=\"download-upload-video\""]) {
+  if (!app.includes(emptyMediaAction)) throw new Error(`Missing empty-state media action: ${emptyMediaAction}`);
+}
+if (app.includes("Tải APK video")) throw new Error("Old APK video button label is still present");
 if (app.includes("account-switch-actions")) throw new Error("Old stacked account switch markup is still present");
 if (app.includes('<section class="panel video-panel">')) throw new Error("Video panel should not render after moving its buttons into account actions");
 

@@ -196,7 +196,12 @@ function renderAccountPanel(settings) {
         <button class="btn-refresh" data-action="get-account" data-type="mail">${settingsIcon("mail")}<span>Lấy Mail Đăng ký</span></button>
         <button class="btn-refresh" data-action="get-account" data-type="normal">${settingsIcon("users")}<span>Lấy Tài khoản Thường</span></button>
         <button class="btn-green" data-action="get-account" data-type="2fa">${settingsIcon("shield")}<span>Lấy Tài khoản 2FA</span></button>
-        <a class="btn-apk" href="/downloads/NexusTiktok-release.apk" download="NexusTiktok-release.apk" rel="nofollow">${settingsIcon("download")}<span>Tải APK video</span></a>
+        ${showProfileDownload ? (pendingProfileImage
+          ? `<button type="button" class="account-media-action account-profile-action" data-action="confirm-profile-image">Confirm</button>`
+          : `<button type="button" class="account-media-action account-profile-action" data-action="download-profile-image">Tải Ảnh Profile</button>`) : ""}
+        ${showUploadVideo ? (pendingUploadVideo
+          ? `<button type="button" class="account-media-action account-upload-video-action" data-action="confirm-upload-video">Confirm</button>`
+          : `<button type="button" class="account-media-action account-upload-video-action" data-action="download-upload-video">Tải video up tiktok</button>`) : ""}
       </div>
     </div>
   `;
