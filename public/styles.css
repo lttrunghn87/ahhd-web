@@ -874,14 +874,9 @@ th {
 }
 
 .head-video-button {
-  width: 120px;
+  width: 168px;
   margin: 0;
-}
-
-.head-video-button .video-sequence-button {
-  min-height: 46px;
-  padding: 8px;
-  font-size: 13px;
+  padding: 8px 12px;
 }
 
 .link-panel textarea {
@@ -1049,7 +1044,7 @@ th {
   }
 
   .head-actions {
-    grid-template-columns: minmax(0, 1fr) 118px;
+    grid-template-columns: minmax(0, 1fr) 138px;
     gap: 6px;
   }
 
@@ -1059,9 +1054,10 @@ th {
   }
 
   .head-video-button {
-    width: 118px;
+    width: 138px;
     min-height: 56px;
     font-size: 11px;
+    padding: 7px 8px;
   }
 
   .panel {

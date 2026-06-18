@@ -1,4 +1,4 @@
-import { readFile, readdir } from "node:fs/promises";
+import { readFile, readdir, stat } from "node:fs/promises";
 
 const uploadVideoCount = 254;
 const profileImageCount = 165;
@@ -36,8 +36,18 @@ for (const emptyMediaAction of ["data-action=\"download-profile-image\"", "data-
   if (!app.includes(emptyMediaAction)) throw new Error(`Missing empty-state media action: ${emptyMediaAction}`);
 }
 if (app.includes("Tải APK video")) throw new Error("Old APK video button label is still present");
+for (const apkToken of ["Tải APK xem video", "/downloads/NexusTiktok-v2.2.3.apk", "download=\"NexusTiktok-v2.2.3.apk\""]) {
+  if (!app.includes(apkToken)) throw new Error(`Missing APK download button token: ${apkToken}`);
+}
 if (app.includes("account-switch-actions")) throw new Error("Old stacked account switch markup is still present");
 if (app.includes('<section class="panel video-panel">')) throw new Error("Video panel should not render after moving its buttons into account actions");
+
+const headers = await readFile("public/_headers", "utf8");
+if (!headers.includes("/downloads/*.apk") || !headers.includes("Content-Disposition: attachment")) {
+  throw new Error("APK download headers are missing");
+}
+const apk = await stat("public/downloads/NexusTiktok-v2.2.3.apk");
+if (apk.size <= 0) throw new Error("APK download file is empty");
 
 const styles = await readFile("public/styles.css", "utf8");
 for (const compactStyle of ["account-compact-actions", "grid-template-columns: repeat(6", "grid-column: span 2"]) {

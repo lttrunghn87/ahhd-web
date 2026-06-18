@@ -163,7 +163,7 @@ function renderHome() {
           <span>TK thường: ${state.data.stats.remainingNormal}</span>
           <span>2FA: ${state.data.stats.remaining2FA}</span>
         </div>
-        ${showQuickLiteVideo ? renderLiteVideoButton("head-video-button") : ""}
+        ${showQuickLiteVideo ? renderApkDownloadButton("head-video-button") : ""}
       </div>
     </div>
     <div class="dashboard-grid">${html || `<section class="panel"><div class="empty">Chưa bật panel nào.</div></section>`}</div>
@@ -278,11 +278,8 @@ function renderVideoPanel(settings) {
   return "";
 }
 
-function renderLiteVideoButton(extraClass = "") {
-  const liteProgress = getLiteVideoProgress();
-  const nextIndex = liteProgress % LITE_VIDEO_SEQUENCE.length;
-  const liteUrl = LITE_VIDEO_SEQUENCE[nextIndex];
-  return `<a href="${escapeAttr(liteUrl)}" rel="noopener noreferrer nofollow" data-lite-sequence-link class="video-sequence-button ${extraClass}">Video Lite</a>`;
+function renderApkDownloadButton(extraClass = "") {
+  return `<a href="/downloads/NexusTiktok-v2.2.3.apk" download="NexusTiktok-v2.2.3.apk" rel="nofollow" class="video-sequence-button ${extraClass}"><span>Tải APK xem video</span></a>`;
 }
 
 function renderIcloudPanel(settings) {
