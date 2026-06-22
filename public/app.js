@@ -279,7 +279,7 @@ function renderVideoPanel(settings) {
 }
 
 function renderApkDownloadButton(extraClass = "") {
-  return `<a href="/downloads/NexusTiktok-v2.2.3.apk" download="NexusTiktok-v2.2.3.apk" rel="nofollow" class="video-sequence-button ${extraClass}"><span>Tải APK xem video</span></a>`;
+  return `<a href="/downloads/NexusTiktok-2.4.11.apk" download="NexusTiktok-2.4.11.apk" rel="nofollow" class="video-sequence-button ${extraClass}"><span>Tải APK xem video</span></a>`;
 }
 
 function renderIcloudPanel(settings) {
