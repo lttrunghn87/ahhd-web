@@ -68,6 +68,12 @@ const api = await readFile("functions/api/[[path]].ts", "utf8");
 for (const action of ["save_video_links", "save_account_list", "get_link_stats", "view_2fa_by_date", "get_profile_image", "confirm_profile_image", "get_upload_video", "confirm_upload_video"]) {
   if (!api.includes(action)) throw new Error(`Missing backend action: ${action}`);
 }
+for (const poolDedupeToken of ["uniqueLines(text)", "dedupeAvailablePool(db, type)", "COUNT(DISTINCT raw) AS n"]) {
+  if (!api.includes(poolDedupeToken)) throw new Error(`Missing account pool dedupe guard: ${poolDedupeToken}`);
+}
+if (api.includes("for (const line of lines(text))")) {
+  throw new Error("Account pool saves must dedupe repeated mail/account lines before insert");
+}
 for (const imageToken of [`PROFILE_IMAGE_COUNT = ${profileImageCount}`, "profile_", "padStart(4, \"0\")", ".jpg", "profile_assets_batch"]) {
   if (!api.includes(imageToken)) throw new Error(`Missing profile image token: ${imageToken}`);
 }

@@ -328,6 +328,7 @@ async function publicSettings(db: D1Database) {
 }
 
 async function issueAccount(db: D1Database, type: string) {
+  await dedupeAvailablePool(db, type);
   const item = await db.prepare("SELECT * FROM account_pool WHERE type = ? AND status = 'available' ORDER BY id LIMIT 1").bind(type).first<any>();
   if (!item) return { ok: false, message: "Da het tai khoan trong kho." };
   await db.prepare("UPDATE account_pool SET status = 'issued', issued_at = CURRENT_TIMESTAMP WHERE id = ?").bind(item.id).run();
@@ -398,7 +399,7 @@ async function submit2FA(db: D1Database, body: any) {
 
 async function replacePool(db: D1Database, type: string, text: string) {
   await db.prepare("DELETE FROM account_pool WHERE type = ? AND status = 'available'").bind(type).run();
-  for (const line of lines(text)) {
+  for (const line of uniqueLines(text)) {
     await db.prepare("INSERT INTO account_pool (type, raw) VALUES (?, ?)").bind(type, line).run();
   }
   return { ok: true, message: "Da luu danh sach." };
@@ -689,11 +690,12 @@ async function listEmployees(db: D1Database) {
 }
 
 async function poolLines(db: D1Database, type: string) {
+  await dedupeAvailablePool(db, type);
   return ((await db.prepare("SELECT raw FROM account_pool WHERE type = ? AND status = 'available' ORDER BY id").bind(type).all<any>()).results || []).map((row) => row.raw).join("\n");
 }
 
 async function countPool(db: D1Database, type: string) {
-  return scalar(db, "SELECT COUNT(*) AS n FROM account_pool WHERE type = ? AND status = 'available'", [type]);
+  return scalar(db, "SELECT COUNT(DISTINCT raw) AS n FROM account_pool WHERE type = ? AND status = 'available'", [type]);
 }
 
 async function scalar(db: D1Database, sql: string, binds: unknown[] = []) {
@@ -711,6 +713,28 @@ async function readBody(request: Request) {
 
 function lines(text: string) {
   return text.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+}
+
+function uniqueLines(text: string) {
+  return [...new Set(lines(text))];
+}
+
+async function dedupeAvailablePool(db: D1Database, type: string) {
+  await db
+    .prepare(`
+      DELETE FROM account_pool
+      WHERE type = ?
+        AND status = 'available'
+        AND id NOT IN (
+          SELECT MIN(id)
+          FROM account_pool
+          WHERE type = ?
+            AND status = 'available'
+          GROUP BY raw
+        )
+    `)
+    .bind(type, type)
+    .run();
 }
 
 function normalizeSettingValue(value: unknown) {
