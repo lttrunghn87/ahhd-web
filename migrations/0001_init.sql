@@ -60,3 +60,9 @@ CREATE TABLE IF NOT EXISTS upload_video_assets (
   used_at TEXT,
   created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE TABLE IF NOT EXISTS tiktok_sessions (
+  session_key TEXT PRIMARY KEY,
+  next_index INTEGER NOT NULL DEFAULT 0,
+  updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);

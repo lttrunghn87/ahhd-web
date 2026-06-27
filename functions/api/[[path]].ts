@@ -54,6 +54,27 @@ const DEFAULT_VIDEO_LITE_60 = [
   "https://lite.tiktok.com/t/ZSQQMHfPU/",
   "https://lite.tiktok.com/t/ZSQQMrpPH/"
 ].join("\n");
+const TIKTOK_DEFAULT_DURATION_MINUTES = 3;
+const TIKTOK_LITE_QUEUE = [
+  "https://lite.tiktok.com/t/ZSCBeKGvJ/",
+  "https://lite.tiktok.com/t/ZSCBdrbwc/",
+  "https://lite.tiktok.com/t/ZSCBdArQX/",
+  "https://lite.tiktok.com/t/ZSCBdunCX/",
+  "https://lite.tiktok.com/t/ZSCBdxcUH/",
+  "https://lite.tiktok.com/t/ZSCBdMguj/",
+  "https://lite.tiktok.com/t/ZSCBdApuo/",
+  "https://lite.tiktok.com/t/ZSCBd9VPJ/",
+  "https://lite.tiktok.com/t/ZSCBdkQdo/",
+  "https://lite.tiktok.com/t/ZSCBd42xb/",
+  "https://lite.tiktok.com/t/ZSCBdu8W7/",
+  "https://lite.tiktok.com/t/ZSCBdmApu/",
+  "https://lite.tiktok.com/t/ZSCBdMXde/",
+  "https://lite.tiktok.com/t/ZSCBRyq4N/",
+  "https://lite.tiktok.com/t/ZSCBRjUaw/",
+  "https://lite.tiktok.com/t/ZSCBRmWj6/",
+  "https://lite.tiktok.com/t/ZSCB8eAK7/",
+  "https://lite.tiktok.com/t/ZSCBRgTVA/"
+];
 
 const defaultSettings: Record<string, string> = {
   settings_password_hash: "",
@@ -97,6 +118,12 @@ export const onRequest = async (ctx: Ctx) => {
 
     const body = method === "GET" ? Object.fromEntries(url.searchParams) : await readBody(ctx.request);
     const session = await readSession(ctx.request, ctx.env);
+    const pathname = url.pathname.replace(/\/+$/, "") || "/";
+
+    if (pathname === "/api/tiktok/next") {
+      const result = await getNextTiktokVideo(ctx.env.DB, body, ctx.request);
+      return response(result, result.ok ? 200 : 400);
+    }
 
     switch (action) {
       case "get_initial_data":
@@ -226,6 +253,7 @@ async function ensureSchema(db: D1Database) {
     CREATE TABLE IF NOT EXISTS twofa_records (id INTEGER PRIMARY KEY AUTOINCREMENT, email TEXT, username TEXT, password TEXT, secret TEXT NOT NULL, code TEXT, created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP);
     CREATE TABLE IF NOT EXISTS profile_assets (path TEXT PRIMARY KEY, status TEXT NOT NULL DEFAULT 'available', used_at TEXT, created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP);
     CREATE TABLE IF NOT EXISTS upload_video_assets (path TEXT PRIMARY KEY, status TEXT NOT NULL DEFAULT 'available', used_at TEXT, created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP);
+    CREATE TABLE IF NOT EXISTS tiktok_sessions (session_key TEXT PRIMARY KEY, next_index INTEGER NOT NULL DEFAULT 0, updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP);
   `);
 
   if (!defaultSettings.settings_password_hash) {
@@ -510,6 +538,88 @@ async function confirmUploadVideo(db: D1Database, path: string) {
   const changes = Number(result.meta?.changes || 0);
   if (!changes) return { ok: false, message: "Video nay da duoc xac nhan hoac khong con kha dung." };
   return { ok: true, message: "Da xac nhan video up TikTok da su dung." };
+}
+
+async function getNextTiktokVideo(db: D1Database, body: any, request: Request) {
+  const sessionKey = normalizeSessionKey(
+    body.sessionKey || body.session_key || body.key || request.headers.get("x-session-key") || ""
+  );
+  const total = TIKTOK_LITE_QUEUE.length;
+  if (!sessionKey) {
+    return { ok: false, status: "error", message: "Thieu sessionKey.", sessionKey: "", remaining: total, total };
+  }
+
+  const row = await db
+    .prepare("SELECT next_index FROM tiktok_sessions WHERE session_key = ?")
+    .bind(sessionKey)
+    .first<any>();
+  const startIndex = clampQueueIndex(row?.next_index, total);
+
+  for (let offset = 0; offset < total; offset += 1) {
+    const index = (startIndex + offset) % total;
+    const url = TIKTOK_LITE_QUEUE[index];
+    const resolved = await resolveTiktokLiteUrl(url);
+    const nextIndex = (index + 1) % total;
+
+    if (!resolved.ok) continue;
+
+    await saveTiktokSessionIndex(db, sessionKey, nextIndex);
+    return {
+      ok: true,
+      status: "success",
+      url,
+      videoId: resolved.videoId,
+      durationMinutes: TIKTOK_DEFAULT_DURATION_MINUTES,
+      sessionKey,
+      remaining: total - index - 1,
+      total
+    };
+  }
+
+  return { ok: false, status: "error", message: "Khong co link TikTok Lite hop le.", sessionKey, remaining: 0, total };
+}
+
+async function saveTiktokSessionIndex(db: D1Database, sessionKey: string, nextIndex: number) {
+  await db
+    .prepare(`
+      INSERT INTO tiktok_sessions (session_key, next_index, updated_at)
+      VALUES (?, ?, CURRENT_TIMESTAMP)
+      ON CONFLICT(session_key) DO UPDATE SET
+        next_index = excluded.next_index,
+        updated_at = CURRENT_TIMESTAMP
+    `)
+    .bind(sessionKey, nextIndex)
+    .run();
+}
+
+async function resolveTiktokLiteUrl(url: string) {
+  const result = await fetch(url, {
+    redirect: "manual",
+    headers: {
+      "User-Agent": "Mozilla/5.0 (Linux; Android 10) AppleWebKit/537.36 Chrome/124 Mobile Safari/537.36",
+      Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    }
+  });
+  if (result.status !== 302) return { ok: false, status: result.status, videoId: "" };
+
+  const redirectedUrl = result.headers.get("location") || "";
+  const videoId = extractTiktokVideoId(redirectedUrl);
+  if (!videoId) return { ok: false, status: result.status, videoId: "" };
+  return { ok: true, status: result.status, videoId };
+}
+
+function extractTiktokVideoId(url: string) {
+  return url.match(/\/video\/(\d+)/)?.[1] || "";
+}
+
+function normalizeSessionKey(value: unknown) {
+  return String(value || "").trim().slice(0, 128);
+}
+
+function clampQueueIndex(value: unknown, total: number) {
+  const index = Number(value);
+  if (!Number.isInteger(index) || index < 0) return 0;
+  return index % total;
 }
 
 async function getEmployeeManager(db: D1Database) {

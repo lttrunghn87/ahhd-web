@@ -87,6 +87,25 @@ if (profileImages.length !== profileImageCount) {
 for (const videoToken of ["upload_video_assets", `length: ${uploadVideoCount}`, "upload_video_", ".mp4"]) {
   if (!api.includes(videoToken)) throw new Error(`Missing upload video token: ${videoToken}`);
 }
+for (const tiktokToken of [
+  "TIKTOK_LITE_QUEUE",
+  "TIKTOK_DEFAULT_DURATION_MINUTES = 3",
+  "/api/tiktok/next",
+  "tiktok_sessions",
+  "getNextTiktokVideo",
+  "resolveTiktokLiteUrl",
+  "extractTiktokVideoId",
+  "redirect: \"manual\"",
+  "durationMinutes: TIKTOK_DEFAULT_DURATION_MINUTES",
+  "remaining",
+  "total"
+]) {
+  if (!api.includes(tiktokToken)) throw new Error(`Missing TikTok next API token: ${tiktokToken}`);
+}
+const tiktokLiteQueueMatches = api.match(/https:\/\/lite\.tiktok\.com\/t\/ZSCB[^"`\s]+\/?/g) || [];
+if (new Set(tiktokLiteQueueMatches).size !== 18) {
+  throw new Error(`Expected 18 unique TikTok Lite queue URLs, found ${new Set(tiktokLiteQueueMatches).size}`);
+}
 
 const uploadVideos = (await readdir("public/upload-videos")).filter((name) => /^upload_video_\d{4}\.mp4$/.test(name));
 if (uploadVideos.length !== uploadVideoCount) {
