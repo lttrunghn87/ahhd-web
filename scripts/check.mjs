@@ -35,6 +35,9 @@ for (const mediaToken of ["account-media-action", "account-profile-action", "acc
 for (const emptyMediaAction of ["data-action=\"download-profile-image\"", "data-action=\"download-upload-video\""]) {
   if (!app.includes(emptyMediaAction)) throw new Error(`Missing empty-state media action: ${emptyMediaAction}`);
 }
+for (const configurableVideoToken of ["video_lite_short", "Link TikTok Lite (3-5"]) {
+  if (!app.includes(configurableVideoToken)) throw new Error(`Missing configurable short TikTok Lite setting: ${configurableVideoToken}`);
+}
 if (app.includes("Tải APK video")) throw new Error("Old APK video button label is still present");
 for (const apkToken of ["Tải APK xem video", "/downloads/NexusTiktok-2.4.11.apk", "download=\"NexusTiktok-2.4.11.apk\""]) {
   if (!app.includes(apkToken)) throw new Error(`Missing APK download button token: ${apkToken}`);
@@ -100,7 +103,11 @@ for (const videoToken of ["upload_video_assets", `length: ${uploadVideoCount}`, 
   if (!api.includes(videoToken)) throw new Error(`Missing upload video token: ${videoToken}`);
 }
 for (const tiktokToken of [
-  "TIKTOK_LITE_QUEUE",
+  "DEFAULT_TIKTOK_LITE_SHORT",
+  "video_lite_short: DEFAULT_TIKTOK_LITE_SHORT",
+  "setSetting(db, \"video_lite_short\"",
+  "getSetting(db, \"video_lite_short\")",
+  "tiktokQueueFromSettings",
   "TIKTOK_DEFAULT_DURATION_MINUTES = 3",
   "/api/tiktok/next",
   "tiktok_sessions",
@@ -113,6 +120,9 @@ for (const tiktokToken of [
   "total"
 ]) {
   if (!api.includes(tiktokToken)) throw new Error(`Missing TikTok next API token: ${tiktokToken}`);
+}
+if (api.includes("TIKTOK_LITE_QUEUE")) {
+  throw new Error("TikTok Lite next API must read from settings, not the hardcoded TIKTOK_LITE_QUEUE constant");
 }
 const tiktokLiteQueueMatches = api.match(/https:\/\/lite\.tiktok\.com\/t\/ZSCB[^"`\s]+\/?/g) || [];
 if (new Set(tiktokLiteQueueMatches).size !== 18) {

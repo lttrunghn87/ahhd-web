@@ -492,6 +492,7 @@ function renderVideoSettings() {
       <p class="muted">Nhập danh sách link video TikTok, mỗi link trên một dòng.</p>
       <div class="form-group"><label>Link TikTok thường (60 phút)</label><textarea name="video_normal_60">${escapeHtml(s.video_normal_60 || "")}</textarea></div>
       <div class="form-group"><label>Link TikTok Lite (60 phút)</label><textarea name="video_lite_60">${escapeHtml(s.video_lite_60 || "")}</textarea></div>
+      <div class="form-group"><label>Link TikTok Lite (3-5 phút)</label><textarea name="video_lite_short">${escapeHtml(s.video_lite_short || "")}</textarea></div>
       <div class="form-group"><label>Link TikTok Lite (180 phút)</label><textarea name="video_lite_180">${escapeHtml(s.video_lite_180 || "")}</textarea></div>
       <button class="btn-save" type="submit">Lưu Danh sách Link Video</button>
     </form>

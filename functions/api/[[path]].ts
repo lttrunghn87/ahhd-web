@@ -55,7 +55,7 @@ const DEFAULT_VIDEO_LITE_60 = [
   "https://lite.tiktok.com/t/ZSQQMrpPH/"
 ].join("\n");
 const TIKTOK_DEFAULT_DURATION_MINUTES = 3;
-const TIKTOK_LITE_QUEUE = [
+const DEFAULT_TIKTOK_LITE_SHORT = [
   "https://lite.tiktok.com/t/ZSCBeKGvJ/",
   "https://lite.tiktok.com/t/ZSCBdrbwc/",
   "https://lite.tiktok.com/t/ZSCBdArQX/",
@@ -74,7 +74,7 @@ const TIKTOK_LITE_QUEUE = [
   "https://lite.tiktok.com/t/ZSCBRmWj6/",
   "https://lite.tiktok.com/t/ZSCB8eAK7/",
   "https://lite.tiktok.com/t/ZSCBRgTVA/"
-];
+].join("\n");
 
 const defaultSettings: Record<string, string> = {
   settings_password_hash: "",
@@ -87,6 +87,7 @@ const defaultSettings: Record<string, string> = {
   default_password: "Phat3479@",
   video_normal_60: "https://vt.tiktok.com/ZSBQ8GVqD/",
   video_lite_60: DEFAULT_VIDEO_LITE_60,
+  video_lite_short: DEFAULT_TIKTOK_LITE_SHORT,
   video_lite_180: "https://www.icloud.com/shortcuts/06edcf1bdaa24bc791c865be824172e4",
   icloud_account: "",
   icloud_password: "",
@@ -436,6 +437,7 @@ async function replacePool(db: D1Database, type: string, text: string) {
 async function saveVideoLinks(db: D1Database, body: any) {
   await setSetting(db, "video_normal_60", String(body.video_normal_60 || ""));
   await setSetting(db, "video_lite_60", String(body.video_lite_60 || ""));
+  await setSetting(db, "video_lite_short", String(body.video_lite_short || ""));
   await setSetting(db, "video_lite_180", String(body.video_lite_180 || ""));
   return { ok: true, message: "Da luu danh sach link video." };
 }
@@ -544,9 +546,13 @@ async function getNextTiktokVideo(db: D1Database, body: any, request: Request) {
   const sessionKey = normalizeSessionKey(
     body.sessionKey || body.session_key || body.key || request.headers.get("x-session-key") || ""
   );
-  const total = TIKTOK_LITE_QUEUE.length;
+  const queue = tiktokQueueFromSettings(await getSetting(db, "video_lite_short"));
+  const total = queue.length;
   if (!sessionKey) {
     return { ok: false, status: "error", message: "Thieu sessionKey.", sessionKey: "", remaining: total, total };
+  }
+  if (!total) {
+    return { ok: false, status: "error", message: "Chua cau hinh link TikTok Lite 3-5 phut hop le.", sessionKey, remaining: 0, total: 0 };
   }
 
   const row = await db
@@ -557,7 +563,7 @@ async function getNextTiktokVideo(db: D1Database, body: any, request: Request) {
 
   for (let offset = 0; offset < total; offset += 1) {
     const index = (startIndex + offset) % total;
-    const url = TIKTOK_LITE_QUEUE[index];
+    const url = queue[index];
     const resolved = await resolveTiktokLiteUrl(url);
     const nextIndex = (index + 1) % total;
 
@@ -577,6 +583,10 @@ async function getNextTiktokVideo(db: D1Database, body: any, request: Request) {
   }
 
   return { ok: false, status: "error", message: "Khong co link TikTok Lite hop le.", sessionKey, remaining: 0, total };
+}
+
+function tiktokQueueFromSettings(text: string) {
+  return uniqueLines(text).filter((url) => /^https:\/\/lite\.tiktok\.com\/t\/[A-Za-z0-9]+\/?$/.test(url));
 }
 
 async function saveTiktokSessionIndex(db: D1Database, sessionKey: string, nextIndex: number) {
