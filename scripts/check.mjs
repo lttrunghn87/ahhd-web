@@ -63,6 +63,18 @@ if (!styles.includes(".account-choice-actions .account-media-action")) {
 if (styles.includes(".account-media-action {\n  grid-column: span 6")) {
   throw new Error("Media buttons should share one row, not span the full row");
 }
+if (styles.includes("grid-template-columns: minmax(0, 1fr) 116px")) {
+  throw new Error("Mobile head actions must stack instead of using a narrow APK column");
+}
+for (const mobileResponsiveToken of [
+  ".head-actions {\n    grid-template-columns: 1fr;",
+  ".head-video-button {\n    width: 100%;",
+  ".account-choice-actions {\n    grid-template-columns: repeat(2",
+  ".account-choice-actions .account-media-action {\n    grid-column: span 2;",
+  "overflow-wrap: anywhere"
+]) {
+  if (!styles.includes(mobileResponsiveToken)) throw new Error(`Missing mobile responsive style: ${mobileResponsiveToken}`);
+}
 
 const api = await readFile("functions/api/[[path]].ts", "utf8");
 for (const action of ["save_video_links", "save_account_list", "get_link_stats", "view_2fa_by_date", "get_profile_image", "confirm_profile_image", "get_upload_video", "confirm_upload_video"]) {
