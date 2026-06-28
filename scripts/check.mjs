@@ -114,6 +114,8 @@ for (const tiktokToken of [
   "getNextTiktokVideo",
   "readTiktokSessionKey(body, request)",
   "request.headers.get(\"x-session-key\")",
+  "parseCookies(request.headers.get(\"Cookie\") || \"\").tiktok_session_key",
+  "cookie(ctx.request, \"tiktok_session_key\", result.sessionKey",
   "crypto.randomUUID()",
   "request.method.toUpperCase() !== \"GET\"",
   "resolveTiktokLiteUrl",

@@ -124,7 +124,7 @@ export const onRequest = async (ctx: Ctx) => {
 
     if (pathname === "/api/tiktok/next") {
       const result = await getNextTiktokVideo(ctx.env.DB, body, ctx.request);
-      return response(result, result.ok ? 200 : 400);
+      return response(result, result.ok ? 200 : 400, [cookie(ctx.request, "tiktok_session_key", result.sessionKey, SESSION_MAX_AGE)]);
     }
 
     switch (action) {
@@ -636,6 +636,9 @@ function extractTiktokVideoId(url: string) {
 function readTiktokSessionKey(body: any, request: Request) {
   const headerValue = request.headers.get("x-session-key") || request.headers.get("x-device-id") || "";
   if (headerValue) return normalizeSessionKey(headerValue);
+
+  const cookieValue = parseCookies(request.headers.get("Cookie") || "").tiktok_session_key || "";
+  if (cookieValue) return normalizeSessionKey(cookieValue);
 
   if (request.method.toUpperCase() !== "GET") {
     const bodyValue = body.sessionKey || body.session_key || body.key || "";
