@@ -587,7 +587,17 @@ async function getNextTiktokVideo(db: D1Database, body: any, request: Request) {
 }
 
 function tiktokQueueFromSettings(text: string) {
-  return uniqueLines(text).filter((url) => /^https:\/\/lite\.tiktok\.com\/t\/[A-Za-z0-9]+\/?$/.test(url));
+  return uniqueLines(text).map(normalizeTiktokVideoUrl).filter(Boolean);
+}
+
+function normalizeTiktokVideoUrl(value: string) {
+  if (/^https:\/\/lite\.tiktok\.com\/t\/[A-Za-z0-9]+\/?$/.test(value)) return value;
+  if (isTikTokVideoUrl(value)) return value;
+  return "";
+}
+
+function isTikTokVideoUrl(value: string) {
+  return /^https:\/\/(?:www\.)?tiktok\.com\/@[^/\s]+\/video\/\d+(?:[/?#][^\s]*)?$/.test(value);
 }
 
 async function saveTiktokSessionIndex(db: D1Database, sessionKey: string, nextIndex: number) {
@@ -604,6 +614,11 @@ async function saveTiktokSessionIndex(db: D1Database, sessionKey: string, nextIn
 }
 
 async function resolveTiktokLiteUrl(url: string) {
+  const directVideoId = extractTiktokVideoId(url);
+  if (isTikTokVideoUrl(url) && directVideoId) {
+    return { ok: true, status: 200, videoId: directVideoId };
+  }
+
   const result = await fetch(url, {
     redirect: "manual",
     headers: {

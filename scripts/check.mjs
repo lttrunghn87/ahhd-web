@@ -114,6 +114,9 @@ for (const tiktokToken of [
   "getNextTiktokVideo",
   "resolveTiktokLiteUrl",
   "extractTiktokVideoId",
+  "isTikTokVideoUrl",
+  "(?:www\\.)?tiktok\\.com",
+  "const directVideoId = extractTiktokVideoId(url)",
   "REDIRECT_STATUSES",
   "301",
   "REDIRECT_STATUSES.has(result.status)",
@@ -129,6 +132,9 @@ if (api.includes("TIKTOK_LITE_QUEUE")) {
 }
 if (api.includes("result.status !== 302")) {
   throw new Error("TikTok Lite resolver must accept valid non-302 redirect statuses such as 301");
+}
+if (!api.includes("isTikTokVideoUrl(value)") || !api.includes("isTikTokVideoUrl(url) && directVideoId")) {
+  throw new Error("TikTok next API must accept direct www.tiktok.com/@user/video/id URLs from settings");
 }
 const tiktokLiteQueueMatches = api.match(/https:\/\/lite\.tiktok\.com\/t\/ZSCB[^"`\s]+\/?/g) || [];
 if (new Set(tiktokLiteQueueMatches).size !== 18) {
