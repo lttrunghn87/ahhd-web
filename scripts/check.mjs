@@ -112,6 +112,10 @@ for (const tiktokToken of [
   "/api/tiktok/next",
   "tiktok_sessions",
   "getNextTiktokVideo",
+  "readTiktokSessionKey(body, request)",
+  "request.headers.get(\"x-session-key\")",
+  "crypto.randomUUID()",
+  "request.method.toUpperCase() !== \"GET\"",
   "resolveTiktokLiteUrl",
   "extractTiktokVideoId",
   "isTikTokVideoUrl",
@@ -135,6 +139,9 @@ if (api.includes("result.status !== 302")) {
 }
 if (!api.includes("isTikTokVideoUrl(value)") || !api.includes("isTikTokVideoUrl(url) && directVideoId")) {
   throw new Error("TikTok next API must accept direct www.tiktok.com/@user/video/id URLs from settings");
+}
+if (api.includes("Thieu sessionKey")) {
+  throw new Error("TikTok next API must not require sessionKey as a URL param");
 }
 const tiktokLiteQueueMatches = api.match(/https:\/\/lite\.tiktok\.com\/t\/ZSCB[^"`\s]+\/?/g) || [];
 if (new Set(tiktokLiteQueueMatches).size !== 18) {

@@ -544,14 +544,9 @@ async function confirmUploadVideo(db: D1Database, path: string) {
 }
 
 async function getNextTiktokVideo(db: D1Database, body: any, request: Request) {
-  const sessionKey = normalizeSessionKey(
-    body.sessionKey || body.session_key || body.key || request.headers.get("x-session-key") || ""
-  );
+  const sessionKey = readTiktokSessionKey(body, request);
   const queue = tiktokQueueFromSettings(await getSetting(db, "video_lite_short"));
   const total = queue.length;
-  if (!sessionKey) {
-    return { ok: false, status: "error", message: "Thieu sessionKey.", sessionKey: "", remaining: total, total };
-  }
   if (!total) {
     return { ok: false, status: "error", message: "Chua cau hinh link TikTok Lite 3-5 phut hop le.", sessionKey, remaining: 0, total: 0 };
   }
@@ -636,6 +631,18 @@ async function resolveTiktokLiteUrl(url: string) {
 
 function extractTiktokVideoId(url: string) {
   return url.match(/\/video\/(\d+)/)?.[1] || "";
+}
+
+function readTiktokSessionKey(body: any, request: Request) {
+  const headerValue = request.headers.get("x-session-key") || request.headers.get("x-device-id") || "";
+  if (headerValue) return normalizeSessionKey(headerValue);
+
+  if (request.method.toUpperCase() !== "GET") {
+    const bodyValue = body.sessionKey || body.session_key || body.key || "";
+    if (bodyValue) return normalizeSessionKey(bodyValue);
+  }
+
+  return crypto.randomUUID();
 }
 
 function normalizeSessionKey(value: unknown) {
