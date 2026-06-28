@@ -114,6 +114,9 @@ for (const tiktokToken of [
   "getNextTiktokVideo",
   "resolveTiktokLiteUrl",
   "extractTiktokVideoId",
+  "REDIRECT_STATUSES",
+  "301",
+  "REDIRECT_STATUSES.has(result.status)",
   "redirect: \"manual\"",
   "durationMinutes: TIKTOK_DEFAULT_DURATION_MINUTES",
   "remaining",
@@ -123,6 +126,9 @@ for (const tiktokToken of [
 }
 if (api.includes("TIKTOK_LITE_QUEUE")) {
   throw new Error("TikTok Lite next API must read from settings, not the hardcoded TIKTOK_LITE_QUEUE constant");
+}
+if (api.includes("result.status !== 302")) {
+  throw new Error("TikTok Lite resolver must accept valid non-302 redirect statuses such as 301");
 }
 const tiktokLiteQueueMatches = api.match(/https:\/\/lite\.tiktok\.com\/t\/ZSCB[^"`\s]+\/?/g) || [];
 if (new Set(tiktokLiteQueueMatches).size !== 18) {

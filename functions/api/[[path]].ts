@@ -55,6 +55,7 @@ const DEFAULT_VIDEO_LITE_60 = [
   "https://lite.tiktok.com/t/ZSQQMrpPH/"
 ].join("\n");
 const TIKTOK_DEFAULT_DURATION_MINUTES = 3;
+const REDIRECT_STATUSES = new Set([301, 302, 303, 307, 308]);
 const DEFAULT_TIKTOK_LITE_SHORT = [
   "https://lite.tiktok.com/t/ZSCBeKGvJ/",
   "https://lite.tiktok.com/t/ZSCBdrbwc/",
@@ -610,7 +611,7 @@ async function resolveTiktokLiteUrl(url: string) {
       Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
     }
   });
-  if (result.status !== 302) return { ok: false, status: result.status, videoId: "" };
+  if (!REDIRECT_STATUSES.has(result.status)) return { ok: false, status: result.status, videoId: "" };
 
   const redirectedUrl = result.headers.get("location") || "";
   const videoId = extractTiktokVideoId(redirectedUrl);
